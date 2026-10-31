@@ -1,0 +1,48 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# Build outputs
+target/
+build/
+dist/
+out/
+coverage/
+*.log
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# AI: data and models are never committed
+ai/data/
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.zip
+*.tar.gz
+ai/training/datasets/*
+!ai/training/datasets/.gitkeep
+ai/models/**/model.onnx
+
+# IDEs and OS
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+.DS_Store
+Thumbs.db
