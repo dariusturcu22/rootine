@@ -1,0 +1,16 @@
+{
+  "crops": {
+    "potato": {
+      "enabled": true,
+      "diagnosis_supported": true,
+      "support_level": "lab_only",
+      "weather_rules": ["hutton"]
+    },
+    "tomato": {
+      "enabled": true,
+      "diagnosis_supported": true,
+      "support_level": "lab_only",
+      "weather_rules": ["hutton", "tomcast"]
+    }
+  }
+}

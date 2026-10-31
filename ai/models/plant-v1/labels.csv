@@ -1,0 +1,14 @@
+class_id,demo1_id,crop,disease,eppo_code,weather_rule,source_dataset,license
+20,0,potato,early_blight,,,PlantVillage,unspecified
+22,1,potato,healthy,,,PlantVillage,unspecified
+21,2,potato,late_blight,,hutton,PlantVillage,unspecified
+28,3,tomato,bacterial_spot,,,PlantVillage,unspecified
+29,4,tomato,early_blight,,tomcast,PlantVillage,unspecified
+37,5,tomato,healthy,,,PlantVillage,unspecified
+30,6,tomato,late_blight,,hutton,PlantVillage,unspecified
+31,7,tomato,leaf_mold,,,PlantVillage,unspecified
+36,8,tomato,mosaic_virus,,,PlantVillage,unspecified
+32,9,tomato,septoria_leaf_spot,,tomcast,PlantVillage,unspecified
+33,10,tomato,spider_mites,,,PlantVillage,unspecified
+34,11,tomato,target_spot,,,PlantVillage,unspecified
+35,12,tomato,yellow_leaf_curl_virus,,,PlantVillage,unspecified

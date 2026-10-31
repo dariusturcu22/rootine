@@ -1,0 +1,9 @@
+{
+  "model_version": "plant-v1",
+  "architecture": "mobilenet_v3_large",
+  "model_file": "model.onnx",
+  "input_size": 224,
+  "mean": [0.485, 0.456, 0.406],
+  "std": [0.229, 0.224, 0.225],
+  "temperature": 1.0
+}
