@@ -17,7 +17,7 @@ All commands are in the [Frontend section of SETUP.md](../SETUP.md#frontend). Be
 ## Local rules
 
 - API calls go only through TanStack Query hooks in `features/*/api`, which use `lib/apiClient.ts`. No `fetch` in components.
-- API types come from `src/types/api.ts`, generated with `npm run gen:api`. Never write or edit them by hand. If a type is missing, the backend contract must change first (see `docs/api/`).
+- API types come from `src/types/api.ts`, produced by `npm run gen:api`. Never write or edit them by hand. If a type is missing, the backend contract must change first (see `docs/api/`).
 - Use Zustand only for state that is really global (for example the auth token). Server data belongs to TanStack Query. Local UI state stays in components.
 - Tests sit next to the file: `X.test.tsx`. Mock the network with MSW (`src/test/msw`); unhandled requests fail the test on purpose.
 - Keep `.gitkeep` files in empty folders until they get real files.
