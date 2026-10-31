@@ -1,0 +1,37 @@
+name: Feature
+description: A user-facing feature
+labels: [feature]
+body:
+  - type: dropdown
+    id: team
+    attributes:
+      label: Team
+      options:
+        - Frontend
+        - Backend
+        - AI
+        - General
+    validations:
+      required: true
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User story
+      description: "As a <who>, I want <what>, so that <why>."
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: One checkbox per criterion.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Links, API changes needed in docs/api/, open questions.

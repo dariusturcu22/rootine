@@ -1,0 +1,29 @@
+name: Task
+description: Technical or organizational work that is not a user-facing feature
+labels: [task]
+body:
+  - type: dropdown
+    id: team
+    attributes:
+      label: Team
+      options:
+        - Frontend
+        - Backend
+        - AI
+        - General
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs to be done
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true

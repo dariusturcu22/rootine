@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        part: [frontend, backend, ai]
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: docker/setup-buildx-action@v4.4.1
+      - uses: docker/login-action@v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}-${{ matrix.part }}
+          tags: type=ref,event=tag
+      - uses: docker/build-push-action@v7.4.0
+        with:
+          context: ./${{ matrix.part }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  # TODO: deploy. The server is not chosen yet.
+  # deploy:
+  #   needs: images
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: echo "Deploy the tagged images to the server here"
