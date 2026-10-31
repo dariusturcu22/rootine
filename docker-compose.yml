@@ -66,8 +66,8 @@ services:
       retries: 12
       start_period: 40s
 
-  ai:
-    build: ./ai
+  ai-service:
+    build: ./ai-service
     environment:
       AI_MOCK: ${AI_MOCK}
       MODEL_DIR: ${MODEL_DIR}

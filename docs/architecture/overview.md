@@ -1,6 +1,6 @@
 # Architecture overview
 
-Rootine has three parts in one repository: `frontend/`, `backend/` and `ai/`. `docker-compose.yml` runs them together with a database and a message broker.
+Rootine has three parts in one repository: `frontend/`, `backend/` and `ai-service/`. `docker-compose.yml` runs them together with a database and a message broker.
 
 ## Components
 
@@ -8,7 +8,7 @@ Rootine has three parts in one repository: `frontend/`, `backend/` and `ai/`. `d
 |---|---|---|---|
 | `web` | nginx with the built React app | 80 | Serves the app on `/` and forwards `/api/*` to the backend |
 | `backend` | Java 21, Spring Boot 4 | 8080 | REST API, auth, parcels, diagnoses, daily risk job, alerts |
-| `ai` | Python 3.11, FastAPI, ONNX Runtime | 8000 | Image diagnosis and weather-based disease risk |
+| `ai-service` | Python 3.11, FastAPI, ONNX Runtime | 8000 | Image diagnosis and weather-based disease risk |
 | `db` | PostgreSQL with PostGIS | 5432 | Users, parcels (geometries), diagnoses, risk results |
 | `rabbitmq` | RabbitMQ with management UI | 5672, 15672 | Alert messages between the daily job and the alert consumer |
 
@@ -39,7 +39,7 @@ flowchart LR
     Browser -->|"/ and /api/*"| Web["web (nginx, :80)"]
     Web -->|"/api/* (prefix removed)"| Backend["backend (Spring Boot, :8080)"]
     Backend --> DB[("db (PostGIS, :5432)")]
-    Backend -->|"/v1/predict, /v1/risk, /v1/crops"| AI["ai (FastAPI, :8000)"]
+    Backend -->|"/v1/predict, /v1/risk, /v1/crops"| AI["ai-service (FastAPI, :8000)"]
     Backend -->|"high risk message"| MQ[["rabbitmq (:5672)"]]
     MQ -->|consumer| Backend
     Backend -->|email| SMTP[Mail server]
@@ -50,4 +50,4 @@ flowchart LR
 
 ## Models
 
-One image model (MobileNetV3-Large) serves all crops. The crop of the parcel is used as a mask over the classes. The classes are read from `ai/models/plant-v1/labels.csv`, never hardcoded. Model files are not in Git; see [ADR 0008](../decisions/0008-models-in-github-releases.md).
+One image model (MobileNetV3-Large) serves all crops. The crop of the parcel is used as a mask over the classes. The classes are read from `ai-service/models/plant-v1/labels.csv`, never hardcoded. Model files are not in Git; see [ADR 0008](../decisions/0008-models-in-github-releases.md).

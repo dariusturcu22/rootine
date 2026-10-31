@@ -8,7 +8,7 @@ from app.api import crops, health, predict, risk, threat
 from app.config import Settings
 from app.inference.classifier import Classifier, load_crops, load_labels, load_metadata
 
-logger = logging.getLogger("rootine.ai")
+logger = logging.getLogger("rootine.ai-service")
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

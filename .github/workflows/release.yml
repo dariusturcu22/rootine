@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        part: [frontend, backend, ai]
+        part: [frontend, backend, ai-service]
     steps:
       - uses: actions/checkout@v7.0.1
       - uses: docker/setup-buildx-action@v4.4.1

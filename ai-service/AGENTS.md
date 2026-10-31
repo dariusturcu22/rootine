@@ -1,4 +1,4 @@
-# AGENTS.md - ai
+# AGENTS.md - ai-service
 
 Read the [root AGENTS.md](../AGENTS.md) first. Its rules apply here, especially: no attribution, English only, tests with every change, no API change without `docs/api/`.
 

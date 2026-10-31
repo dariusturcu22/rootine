@@ -21,7 +21,7 @@ flowchart LR
     Browser -->|"/ and /api/*"| Web["web: nginx + React"]
     Web -->|"/api/*"| Backend["backend: Spring Boot"]
     Backend --> DB[("PostgreSQL + PostGIS")]
-    Backend -->|"/v1/predict, /v1/risk"| AI["ai: FastAPI + ONNX Runtime"]
+    Backend -->|"/v1/predict, /v1/risk"| AI["ai-service: FastAPI + ONNX Runtime"]
     Backend -->|"high risk"| MQ[["RabbitMQ"]]
     AI -->|weather| Meteo[Open-Meteo]
 ```

@@ -56,7 +56,7 @@ docker compose ps
 | AI service docs | http://localhost:8000/docs |
 | RabbitMQ management (user and password in `.env`) | http://localhost:15672 |
 
-Ports: web 80, backend 8080, ai 8000, db 5432, rabbitmq 5672 and 15672.
+Ports: web 80, backend 8080, ai-service 8000, db 5432, rabbitmq 5672 and 15672.
 
 Stop everything (data in volumes is kept):
 
@@ -154,12 +154,12 @@ Useful URLs while it runs: http://localhost:8080/actuator/health, http://localho
 
 ## AI service
 
-Folder: `ai/`. Needs Python 3.11.
+Folder: `ai-service/`. Needs Python 3.11.
 
 Create a virtual environment and install (Windows PowerShell):
 
 ```powershell
-cd ai
+cd ai-service
 py -3.11 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
@@ -168,7 +168,7 @@ pip install -r requirements-dev.txt
 Linux or macOS:
 
 ```bash
-cd ai
+cd ai-service
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt

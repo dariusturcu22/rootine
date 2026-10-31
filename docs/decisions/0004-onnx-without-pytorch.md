@@ -4,7 +4,7 @@
 PyTorch makes the serving image very large and slow to build. Serving only needs to run a trained model.
 
 ## Decision
-Train with PyTorch (code in `ai/training/`, separate `requirements-train.txt`). Export the model to ONNX. Serve with ONNX Runtime. `ai/requirements.txt` never contains torch.
+Train with PyTorch (code in `ai-service/training/`, separate `requirements-train.txt`). Export the model to ONNX. Serve with ONNX Runtime. `ai-service/requirements.txt` never contains torch.
 
 ## Consequences
 - Smaller and faster Docker image for the AI service.

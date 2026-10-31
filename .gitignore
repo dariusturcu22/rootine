@@ -25,7 +25,7 @@ venv/
 *.egg-info/
 
 # AI: data and models are never committed
-ai/data/
+ai-service/data/
 *.onnx
 *.pt
 *.pth
@@ -33,9 +33,9 @@ ai/data/
 *.h5
 *.zip
 *.tar.gz
-ai/training/datasets/*
-!ai/training/datasets/.gitkeep
-ai/models/**/model.onnx
+ai-service/training/datasets/*
+!ai-service/training/datasets/.gitkeep
+ai-service/models/**/model.onnx
 
 # IDEs and OS
 .idea/

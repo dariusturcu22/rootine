@@ -2,7 +2,7 @@
 
 First draft. Only the backend calls this service. It is not reachable from the browser.
 
-Base URL inside Docker: `http://ai:8000`. Locally: `http://localhost:8000`.
+Base URL inside Docker: `http://ai-service:8000`. Locally: `http://localhost:8000`.
 
 While there is no `model.onnx`, or when `AI_MOCK=true`, the service runs in **mock mode** and returns the fixed responses shown below. Real inference and real weather rules are not implemented yet; in that case `predict` and `risk` return `501`.
 
@@ -16,7 +16,7 @@ Response `200`:
 
 ## GET /v1/crops
 
-Lists the crops that are enabled. Data comes from `ai/models/plant-v1/labels.csv` and `crops.json`.
+Lists the crops that are enabled. Data comes from `ai-service/models/plant-v1/labels.csv` and `crops.json`.
 
 Fields of each crop:
 

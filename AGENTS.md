@@ -14,7 +14,7 @@ Team "Work in Progress (WIP)", course Proiect Colectiv, UBB FMI, 2026-27.
 |---|---|---|
 | `frontend/` | React + TypeScript + Vite, served by nginx | [frontend/AGENTS.md](frontend/AGENTS.md) |
 | `backend/` | Java 21 + Spring Boot 4 REST API | [backend/AGENTS.md](backend/AGENTS.md) |
-| `ai/` | Python FastAPI service (ONNX Runtime) | [ai/AGENTS.md](ai/AGENTS.md) |
+| `ai-service/` | Python FastAPI service (ONNX Runtime) | [ai-service/AGENTS.md](ai-service/AGENTS.md) |
 | `docs/` | Architecture, ADRs, API contract, sprints, meetings | [docs/README.md](docs/README.md) |
 | `docker-compose.yml` | Runs the whole stack | [SETUP.md](SETUP.md) |
 

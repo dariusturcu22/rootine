@@ -4,7 +4,7 @@
 Trained models and datasets are large binary files. Git is bad at them, and a public repository must not contain data we may not redistribute.
 
 ## Decision
-No datasets and no model files in Git (`*.onnx`, `*.pt`, `*.pth` and `ai/data/` are ignored). A trained `model.onnx` is attached to a GitHub Release. `ai/scripts/download_model.py --tag <tag>` downloads it into `ai/models/plant-v1/`. Small text files that describe the model (`labels.csv`, `crops.json`, `metadata.json`) are in Git.
+No datasets and no model files in Git (`*.onnx`, `*.pt`, `*.pth` and `ai-service/data/` are ignored). A trained `model.onnx` is attached to a GitHub Release. `ai-service/scripts/download_model.py --tag <tag>` downloads it into `ai-service/models/plant-v1/`. Small text files that describe the model (`labels.csv`, `crops.json`, `metadata.json`) are in Git.
 
 ## Consequences
 - The repository stays small and clean.

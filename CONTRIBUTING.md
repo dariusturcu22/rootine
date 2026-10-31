@@ -30,13 +30,13 @@ Never push directly to `main`.
 
 ## 3. Commit
 
-Use [Conventional Commits](https://www.conventionalcommits.org/) with the folder as the scope: `type(scope): short description`. Scopes: `frontend`, `backend`, `ai`, `docs`, `ci`. Use no scope for changes that touch many parts.
+Use [Conventional Commits](https://www.conventionalcommits.org/) with the folder as the scope: `type(scope): short description`. Scopes: `frontend`, `backend`, `ai-service`, `docs`, `ci`. Use no scope for changes that touch many parts.
 
 ```
 feat(backend): add parcel CRUD
 fix(frontend): show empty state on the heatmap
 docs(api): describe the diagnoses endpoints
-test(ai): add golden image tests
+test(ai-service): add golden image tests
 chore(ci): update setup-node
 ```
 
