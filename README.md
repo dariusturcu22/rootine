@@ -41,11 +41,16 @@ More details: [docs/architecture/overview.md](docs/architecture/overview.md).
 
 Team **Work in Progress (WIP)**, 8 people.
 
-| Part | Members (GitHub) |
-|---|---|
-| Frontend | Beatrice ([@BeatriceChirila](https://github.com/BeatriceChirila)), Ariana ([@CioataAriana](https://github.com/CioataAriana)) |
-| Backend | Alex Vacaru ([@Alecs06](https://github.com/Alecs06), representative), Alex U ([@AlexU05](https://github.com/AlexU05)), Violeta ([@VioletaUngureanu](https://github.com/VioletaUngureanu)) |
-| AI | Darius ([@DariusTurcu22](https://github.com/DariusTurcu22), team lead and representative), Maia ([@tapordeimaia](https://github.com/tapordeimaia), Scrum Master), Andreea ([@deea-andreea](https://github.com/deea-andreea)) |
+| Part | Member | GitHub | Role |
+|---|---|---|---|
+| Frontend | Beatrice C. | [@BeatriceChirila](https://github.com/BeatriceChirila) | Scrum Master, representative |
+| Frontend | Ariana C. | [@CioataAriana](https://github.com/CioataAriana) | Scrum Master, representative |
+| Backend | Alex V. | [@Alecs06](https://github.com/Alecs06) | Scrum Master, representative |
+| Backend | Alex U. | [@AlexU05](https://github.com/AlexU05) | |
+| Backend | Violeta U. | [@VioletaUngureanu](https://github.com/VioletaUngureanu) | |
+| AI | Darius T. | [@DariusTurcu22](https://github.com/DariusTurcu22) | Team lead, representative |
+| AI | Maia Ț. | [@tapordeimaia](https://github.com/tapordeimaia) | Scrum Master |
+| AI | Andreea Z. | [@deea-andreea](https://github.com/deea-andreea) | |
 
 ## Course
 
