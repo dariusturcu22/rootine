@@ -15,11 +15,17 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-/** Stateless JWT security. Login is not implemented yet, so only public endpoints are open. */
+/**
+ * Stateless JWT security. Registration and login are public; the API documentation and the health
+ * endpoint are public too. Every other endpoint needs a valid JWT.
+ */
 @Configuration
 public class SecurityConfig {
 
   private static final int MIN_SECRET_BYTES = 32;
+
+  private static final String REGISTER_PATH = "/auth/register";
+  private static final String LOGIN_PATH = "/auth/login";
 
   @Bean
   SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -32,6 +38,8 @@ public class SecurityConfig {
                         "/swagger-ui.html",
                         "/swagger-ui/**",
                         "/v3/api-docs/**")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.POST, REGISTER_PATH, LOGIN_PATH)
                     .permitAll()
                     .requestMatchers(HttpMethod.OPTIONS, "/**")
                     .permitAll()
