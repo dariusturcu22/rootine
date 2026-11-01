@@ -11,7 +11,8 @@ Base package `app`, organized by feature:
 ```
 src/main/java/app/
   Application.java
-  common/     config, security, exception handling
+  common/     config, security, exception handling, OpenAPI
+  crop/       the crop list served from the AI service
   user/       controller, service, repository, entity, dto
   parcel/     CRUD parcels, PostGIS geometries
   diagnosis/  image upload, results
