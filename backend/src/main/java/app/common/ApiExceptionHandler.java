@@ -16,7 +16,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class ApiExceptionHandler {
 
   /**
-   *  Returns 501 (Not Implemented) so callers can see the endpoint exists while the logic is still missing.
+   * Returns 501 (Not Implemented) so callers can see the endpoint exists while the logic is still
+   * missing.
    */
   @ExceptionHandler(NotImplementedException.class)
   public ProblemDetail handleNotImplemented(NotImplementedException exception) {
