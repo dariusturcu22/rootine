@@ -166,7 +166,7 @@ def main():
     df.loc[rest.index[va], "split"] = "val"
     df.loc[rest.index[te], "split"] = "test"
 
-    # leakage guard (also covered by tests/test_split_leakage.py)
+    # leakage guard (also covered by training/check_split_leakage.py)
     leaves = df.groupby("split")["leaf_id"].agg(set)
     assert not (
         leaves["train"] & leaves["val"]

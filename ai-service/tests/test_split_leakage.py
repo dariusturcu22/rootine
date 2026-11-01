@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-SPLITS = Path(__file__).resolve().parents[1] / "training" / "datasets"
+SPLITS = Path(__file__).resolve().parent / "datasets"
 MANIFESTS = ["splits_all_38c.csv", "splits_demo1_13c.csv"]
 
 
