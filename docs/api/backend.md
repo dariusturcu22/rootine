@@ -6,6 +6,11 @@ The live version is in Swagger UI: `http://localhost:8080/swagger-ui.html`.
 
 In the browser all paths are under `/api` (nginx removes the prefix before the backend sees it). For example, the browser requests `/api/parcels` and the backend receives `/parcels`.
 
+## Implementation status
+
+Every endpoint below is published in the backend so the OpenAPI document at `http://localhost:8080/v3/api-docs` lists it and the frontend can run `npm run gen:api`. Until a ticket implements an endpoint, calling it returns `501 Not Implemented` with a Problem Details body. The request and response shapes in this document are the real DTOs the endpoints will use, so the generated types are correct from the start.
+
+
 ## Decisions
 
 The backend team decided these points. The frontend adapts to them.
