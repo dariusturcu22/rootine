@@ -16,7 +16,7 @@ This folder is the agreement between the parts (frontend, backend, AI).
 | File | Contract between | Status |
 |---|---|---|
 | [ai-service.md](ai-service.md) | backend and AI service | First draft |
-| [backend.md](backend.md) | frontend and backend | Empty structure, the backend team fills it in |
+| [backend.md](backend.md) | frontend and backend | Draft contract for team review |
 
 ## Conventions
 
