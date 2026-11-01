@@ -1,6 +1,3 @@
-"""Splits must not share any leaf_id. Run after training/prepare_plantvillage.py:
-    python tests/test_split_leakage.py
-"""
 from pathlib import Path
 
 import pandas as pd
@@ -14,8 +11,10 @@ def check_no_leaf_overlap(name):
     leaves = df.groupby("split")["leaf_id"].agg(set)
     for a, b in [("train", "val"), ("train", "test"), ("val", "test")]:
         shared = leaves[a] & leaves[b]
-        assert not shared, f"{name}: {len(shared)} leaf_id shared by {a} and {b}, e.g. {sorted(shared)[:3]}"
-    assert df.groupby("leaf_id")["split"].nunique().max() == 1, f"{name}: a leaf_id spans several splits"
+        assert not shared, (
+            f"{name}: {len(shared)} leaf_id shared by {a} and {b}, e.g. {sorted(shared)[:3]}")
+    assert df.groupby("leaf_id")["split"].nunique().max() == 1, (
+        f"{name}: a leaf_id spans several splits")
     print(f"OK  {name}: {len(df)} images, {df['leaf_id'].nunique()} leaves, no overlap")
 
 
