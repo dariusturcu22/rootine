@@ -12,9 +12,11 @@ def check_no_leaf_overlap(name):
     for a, b in [("train", "val"), ("train", "test"), ("val", "test")]:
         shared = leaves[a] & leaves[b]
         assert not shared, (
-            f"{name}: {len(shared)} leaf_id shared by {a} and {b}, e.g. {sorted(shared)[:3]}")
+            f"{name}: {len(shared)} leaf_id shared by {a} and {b}, e.g. {sorted(shared)[:3]}"
+        )
     assert df.groupby("leaf_id")["split"].nunique().max() == 1, (
-        f"{name}: a leaf_id spans several splits")
+        f"{name}: a leaf_id spans several splits"
+    )
     print(f"OK  {name}: {len(df)} images, {df['leaf_id'].nunique()} leaves, no overlap")
 
 
