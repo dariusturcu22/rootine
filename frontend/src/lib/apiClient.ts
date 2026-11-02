@@ -11,6 +11,21 @@ export class ApiError extends Error {
   }
 }
 
+export type ParcelGeometry = {
+  type: 'Polygon'
+  coordinates: number[][][]
+}
+
+export type Parcel = {
+  id: string
+  name: string
+  crop: string
+  geometry: ParcelGeometry
+  createdAt: string
+}
+
+export type ParcelInput = Omit<Parcel, 'id' | 'createdAt'>
+
 /** fetch wrapper: prefixes the API base path, adds the JWT and parses JSON. */
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
@@ -31,4 +46,30 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     return undefined as T
   }
   return (await response.json()) as T
+}
+
+export function getParcels(): Promise<Parcel[]> {
+  return apiFetch<Parcel[]>('/parcels')
+}
+
+export function getParcel(id: string): Promise<Parcel> {
+  return apiFetch<Parcel>(`/parcels/${id}`)
+}
+
+export function createParcel(parcel: ParcelInput): Promise<Parcel> {
+  return apiFetch<Parcel>('/parcels', {
+    method: 'POST',
+    body: JSON.stringify(parcel),
+  })
+}
+
+export function updateParcel(id: string, parcel: ParcelInput): Promise<Parcel> {
+  return apiFetch<Parcel>(`/parcels/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(parcel),
+  })
+}
+
+export function deleteParcel(id: string): Promise<void> {
+  return apiFetch<void>(`/parcels/${id}`, { method: 'DELETE' })
 }
