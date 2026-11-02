@@ -3,7 +3,21 @@ import { defineConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'fix-react-leaflet-draw',
+      enforce: 'pre',
+      transform(code, id) {
+        if (
+          id.includes('react-leaflet-draw') &&
+          code.includes("import Draw from 'leaflet-draw';")
+        ) {
+          return code.replace("import Draw from 'leaflet-draw';", "import 'leaflet-draw';")
+        }
+      },
+    },
+  ],
   server: {
     proxy: {
       // Same behaviour as nginx in the Docker image: /api/x -> backend /x
