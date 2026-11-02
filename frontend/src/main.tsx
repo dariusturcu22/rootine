@@ -6,11 +6,10 @@ import App from './App'
 import './index.css'
 import { queryClient } from './lib/queryClient'
 
-
-async function startApp() {
+async function start() {
   if (import.meta.env.DEV) {
     const { worker } = await import('./test/msw/browser')
-    await worker.start({ onUnhandledRequest: 'bypass' })
+    await worker.start()
   }
 
   createRoot(document.getElementById('root')!).render(
@@ -24,4 +23,4 @@ async function startApp() {
   )
 }
 
-void startApp()
+void start()

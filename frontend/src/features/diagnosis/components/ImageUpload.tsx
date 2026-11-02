@@ -13,16 +13,12 @@ export function ImageUpload({ parcelId }: ImageUploadProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
-    if (!file) {
-      setPreviewUrl(null)
-      return
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
     }
-
-    const url = URL.createObjectURL(file)
-    setPreviewUrl(url)
-
-    return () => URL.revokeObjectURL(url)
-  }, [file])
+  }, [previewUrl])
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const selectedFile = event.target.files?.[0] ?? null
@@ -32,22 +28,26 @@ export function ImageUpload({ parcelId }: ImageUploadProps) {
 
     if (!selectedFile) {
       setFile(null)
+      setPreviewUrl(null)
       return
     }
 
     if (!['image/jpeg', 'image/png'].includes(selectedFile.type)) {
       setFile(null)
+      setPreviewUrl(null)
       setError('Please select a JPEG or PNG image.')
       return
     }
 
     if (selectedFile.size > 10 * 1024 * 1024) {
       setFile(null)
+      setPreviewUrl(null)
       setError('The image must be smaller than 10 MB.')
       return
     }
 
     setFile(selectedFile)
+    setPreviewUrl(URL.createObjectURL(selectedFile))
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -65,11 +65,7 @@ export function ImageUpload({ parcelId }: ImageUploadProps) {
       const result = await createDiagnosis(file, parcelId)
       setDiagnosis(result)
     } catch (submitError) {
-      setError(
-        submitError instanceof Error
-          ? submitError.message
-          : 'Unable to submit the image.',
-      )
+      setError(submitError instanceof Error ? submitError.message : 'Unable to submit the image.')
     } finally {
       setIsSubmitting(false)
     }
