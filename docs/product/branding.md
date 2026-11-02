@@ -1,6 +1,5 @@
-# Branding
+# Branding Version 1
 
-_Empty template. The frontend team fills it in together with the choice of the UI library._
 <img width="1601" height="892" alt="image" src="https://github.com/user-attachments/assets/ad8ec004-bf77-435c-a9d5-ad0e661e1a13" />
 <img width="1617" height="892" alt="image" src="https://github.com/user-attachments/assets/229d4657-483f-4cc7-a7ba-121c40f5dc9d" />
 <img width="1608" height="922" alt="image" src="https://github.com/user-attachments/assets/7c5fbf1d-decf-4043-b1db-aced05edf58c" />
@@ -10,8 +9,8 @@ _Empty template. The frontend team fills it in together with the choice of the U
 
 ## Name and meaning
 
-rootine
-A play on roots and routine. 
+_rootine_
+"roots" meet "routine." It represents the deep connection farmers have with their land, and the steady, daily rhythms required to make it thrive.
 
 ## Logo
 
@@ -41,3 +40,6 @@ Friendly, clear and supportive without being overly scientific.
 * **Don't:** "Error 400: Invalid image payload."
 * **Do:** "High risk conditions detected for North Field. Attention required."
 * **Don't:** "DANGER! North Field crops are going to die!"
+
+
+## Branding Version 2
