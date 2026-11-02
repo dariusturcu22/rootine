@@ -1,11 +1,11 @@
 package app.diagnosis.web;
 
-import static app.common.error.EndpointStub.notImplemented;
-
 import app.common.config.OpenApiConfig;
 import app.common.error.ProblemDetailResponse;
 import app.diagnosis.dto.DiagnosisResponse;
 import app.diagnosis.dto.DiagnosisUploadForm;
+import app.diagnosis.service.DiagnosisService;
+import app.diagnosis.service.InvalidDiagnosisUploadException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,9 +35,6 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * Diagnoses: the result of one photo sent to the AI service for one parcel. A user sees only their
  * own diagnoses, so every endpoint needs a token.
- *
- * <p>Published for the API contract but not implemented yet, so every call returns 501 with a
- * Problem Details body.
  */
 @RestController
 @RequestMapping(path = "/diagnoses", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -44,6 +43,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class DiagnosisController {
 
   private static final String PROBLEM_JSON = ProblemDetailResponse.MEDIA_TYPE;
+  private final DiagnosisService diagnosisService;
+
+  public DiagnosisController(DiagnosisService diagnosisService) {
+    this.diagnosisService = diagnosisService;
+  }
 
   @Operation(
       summary = "Create a diagnosis from a leaf photo",
@@ -62,7 +66,8 @@ public class DiagnosisController {
         content = @Content(schema = @Schema(implementation = DiagnosisResponse.class))),
     @ApiResponse(
         responseCode = "400",
-        description = "A required part is missing or the file is not a JPEG or PNG image.",
+        description =
+            "A required part is missing, parcelId is not a UUID, or the file is not JPEG or PNG.",
         content =
             @Content(
                 mediaType = PROBLEM_JSON,
@@ -95,19 +100,15 @@ public class DiagnosisController {
             @Content(
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
   public DiagnosisResponse createDiagnosis(
-      @RequestPart("image") MultipartFile image, @RequestPart("parcelId") UUID parcelId) {
-    throw notImplemented();
+      @AuthenticationPrincipal Jwt jwt,
+      @RequestPart(value = "image", required = false) MultipartFile image,
+      @RequestPart(value = "parcelId", required = false) String parcelId) {
+    return diagnosisService.createDiagnosis(
+        UUID.fromString(jwt.getSubject()), image, parseParcelId(parcelId));
   }
 
   @Operation(
@@ -135,20 +136,14 @@ public class DiagnosisController {
             @Content(
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @GetMapping
   public List<DiagnosisResponse> listDiagnoses(
+      @AuthenticationPrincipal Jwt jwt,
       @Parameter(description = "List only the diagnoses of this parcel.")
           @RequestParam(name = "parcelId", required = false)
           UUID parcelId) {
-    throw notImplemented();
+    return diagnosisService.listDiagnoses(UUID.fromString(jwt.getSubject()), parcelId);
   }
 
   @Operation(summary = "Get one diagnosis")
@@ -171,16 +166,20 @@ public class DiagnosisController {
             @Content(
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @GetMapping("/{id}")
-  public DiagnosisResponse getDiagnosis(@PathVariable UUID id) {
-    throw notImplemented();
+  public DiagnosisResponse getDiagnosis(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id) {
+    return diagnosisService.getDiagnosis(UUID.fromString(jwt.getSubject()), id);
+  }
+
+  private static UUID parseParcelId(String parcelId) {
+    if (parcelId == null) {
+      return null;
+    }
+    try {
+      return UUID.fromString(parcelId);
+    } catch (IllegalArgumentException exception) {
+      throw new InvalidDiagnosisUploadException("parcelId must be a valid UUID.", exception);
+    }
   }
 }
