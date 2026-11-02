@@ -1,23 +1,44 @@
+import type { ReactNode } from 'react'
+import type { DrawEvents } from 'leaflet'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MapView } from './MapView'
 
-const editControlProps = vi.fn()
+type MapContainerMockProps = {
+  center: [number, number]
+  zoom: number
+  children?: ReactNode
+}
+
+type EditControlMockProps = {
+  position: string
+  onCreated: (event: DrawEvents.Created) => void
+  draw: {
+    polygon: boolean
+    rectangle: boolean
+    circle: boolean
+    marker: boolean
+    polyline: boolean
+    circlemarker: boolean
+  }
+}
+
+const editControlProps = vi.fn<(props: EditControlMockProps) => void>()
 
 vi.mock('react-leaflet', () => ({
-  MapContainer: ({ children, center, zoom }: any) => (
+  MapContainer: ({ children, center, zoom }: MapContainerMockProps) => (
     <div data-testid="map-container" data-center={center.join(',')} data-zoom={zoom}>
       {children}
     </div>
   ),
   TileLayer: () => <div data-testid="tile-layer" />,
-  FeatureGroup: ({ children }: any) => (
+  FeatureGroup: ({ children }: { children?: ReactNode }) => (
     <div data-testid="feature-group">{children}</div>
   ),
 }))
 
 vi.mock('react-leaflet-draw', () => ({
-  EditControl: (props: any) => {
+  EditControl: (props: EditControlMockProps) => {
     editControlProps(props)
     return <div data-testid="edit-control" />
   },
@@ -28,10 +49,7 @@ describe('MapView', () => {
     render(<MapView />)
 
     expect(screen.getByLabelText('Map of Romania')).toBeInTheDocument()
-    expect(screen.getByTestId('map-container')).toHaveAttribute(
-      'data-center',
-      '45.9432,24.9668',
-    )
+    expect(screen.getByTestId('map-container')).toHaveAttribute('data-center', '45.9432,24.9668')
     expect(screen.getByTestId('map-container')).toHaveAttribute('data-zoom', '6')
   })
 
@@ -63,6 +81,10 @@ describe('MapView', () => {
     render(<MapView />)
 
     const onCreated = editControlProps.mock.lastCall?.[0].onCreated
+    if (!onCreated) {
+      throw new Error('Expected EditControl to receive an onCreated handler')
+    }
+
     onCreated({
       layer: {
         getLatLngs: () => [
@@ -72,7 +94,7 @@ describe('MapView', () => {
           ],
         ],
       },
-    })
+    } as DrawEvents.Created)
 
     expect(consoleLog).toHaveBeenCalledWith('Backend coordinates: ', [
       [24.5, 46.1],
