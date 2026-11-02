@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import type { DrawEvents } from 'leaflet'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MapView } from './MapView'
 
@@ -23,6 +23,10 @@ type EditControlMockProps = {
   }
 }
 
+type PolygonMockProps = {
+  positions: [number, number][]
+}
+
 const editControlProps = vi.fn<(props: EditControlMockProps) => void>()
 
 vi.mock('react-leaflet', () => ({
@@ -34,6 +38,9 @@ vi.mock('react-leaflet', () => ({
   TileLayer: () => <div data-testid="tile-layer" />,
   FeatureGroup: ({ children }: { children?: ReactNode }) => (
     <div data-testid="feature-group">{children}</div>
+  ),
+  Polygon: ({ positions }: PolygonMockProps) => (
+    <div data-testid="parcel-polygon" data-positions={JSON.stringify(positions)} />
   ),
 }))
 
@@ -102,5 +109,19 @@ describe('MapView', () => {
     ])
 
     consoleLog.mockRestore()
+  })
+
+  it('loads and renders parcels returned by MSW', async () => {
+    render(<MapView />)
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('parcel-polygon').length).toBeGreaterThanOrEqual(2)
+    })
+
+    expect(
+      screen
+        .getAllByTestId('parcel-polygon')
+        .some((polygon) => polygon.getAttribute('data-positions')?.includes('[46.5,24.1]')),
+    ).toBe(true)
   })
 })

@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useAuthStore } from '../features/auth/store/authStore'
 import { server } from '../test/msw/server'
-import { ApiError, apiFetch } from './apiClient'
+import { ApiError, apiFetch, createParcel, getParcels } from './apiClient'
 
 describe('apiFetch', () => {
   afterEach(() => useAuthStore.getState().clear())
@@ -42,5 +42,54 @@ describe('apiFetch', () => {
 
     await expect(apiFetch('/ping')).rejects.toMatchObject({ name: 'ApiError', status: 401 })
     await expect(apiFetch('/ping')).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('fetches parcels in the backend contract shape from the MSW handler', async () => {
+    const parcels = await getParcels()
+
+    expect(parcels.length).toBeGreaterThan(0)
+    expect(parcels[0]).toMatchObject({
+      id: expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      ),
+      name: expect.any(String),
+      crop: expect.any(String),
+      geometry: {
+        type: 'Polygon',
+        coordinates: expect.arrayContaining([
+          expect.arrayContaining([
+            expect.arrayContaining([expect.any(Number), expect.any(Number)]),
+          ]),
+        ]),
+      },
+      createdAt: expect.stringMatching(/Z$/),
+    })
+  })
+
+  it('creates a parcel through the MSW handler', async () => {
+    const parcel = await createParcel({
+      name: 'Test field',
+      crop: 'potato',
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [23.7, 46.7],
+            [23.71, 46.7],
+            [23.71, 46.71],
+            [23.7, 46.71],
+            [23.7, 46.7],
+          ],
+        ],
+      },
+    })
+
+    expect(parcel).toMatchObject({
+      id: expect.any(String),
+      name: 'Test field',
+      crop: 'potato',
+      createdAt: expect.stringMatching(/Z$/),
+    })
+    expect(parcel.geometry.coordinates[0][0]).toEqual([23.7, 46.7])
   })
 })
