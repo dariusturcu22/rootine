@@ -56,5 +56,10 @@
     "openapi-typescript": {
       "typescript": "6.0.3"
     }
+  },
+  "msw": {
+    "workerDirectory": [
+      "public"
+    ]
   }
 }
