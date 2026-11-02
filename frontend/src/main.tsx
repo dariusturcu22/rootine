@@ -6,12 +6,21 @@ import App from './App'
 import './index.css'
 import { queryClient } from './lib/queryClient'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </QueryClientProvider>
-  </StrictMode>,
-)
+async function start() {
+  if (import.meta.env.DEV) {
+    const { worker } = await import('./test/msw/browser')
+    await worker.start()
+  }
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </QueryClientProvider>
+    </StrictMode>,
+  )
+}
+
+void start()
