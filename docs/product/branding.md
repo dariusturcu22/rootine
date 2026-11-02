@@ -43,3 +43,17 @@ Friendly, clear and supportive without being overly scientific.
 
 
 ## Branding Version 2
+<img width="2948" height="3474" alt="Untitled" src="https://github.com/user-attachments/assets/f151fcf1-2afe-41b8-a026-34d2d6ccd992" />
+<img width="106" height="106" alt="Component 1" src="https://github.com/user-attachments/assets/e6062656-8d36-47cc-928d-d75a9d6a00b9" />
+
+### Colors
+- `#8D6E63`
+- `#2E7D32`
+- `#E9EEE4`
+- `#C5E1A5`
+
+### Fonts
+**Nunito** – used as the primary font throughout the entire design. Its flexibility allows for a clear visual hierarchy using various weights:
+- *Regular* 
+- *Medium* 
+- *Bold* 
