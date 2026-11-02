@@ -1,5 +1,6 @@
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
+import type {} from 'leaflet-draw'
 import { useQuery } from '@tanstack/react-query'
 import type { DrawEvents, LatLng, Polygon as LeafletPolygon } from 'leaflet'
 import { EditControl } from 'react-leaflet-draw'

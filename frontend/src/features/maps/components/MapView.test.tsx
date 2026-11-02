@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen } from '@testing-library/react'
+import type {} from 'leaflet-draw'
 import type { DrawEvents } from 'leaflet'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
