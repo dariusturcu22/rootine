@@ -1,0 +1,45 @@
+{
+  "config": "demo1_13c",
+  "num_classes": 13,
+  "train_images": 14102,
+  "val_images": 3146,
+  "sec_per_epoch": 87.24020077600005,
+  "train_sec": 77.32943406100003,
+  "val_sec": 9.885296228000016,
+  "train_img_per_s": 182.07814619324935,
+  "data_wait_pct": 23.806046027026277,
+  "peak_mem_gb": 1.562994176,
+  "val_acc": 0.9618563254926892,
+  "val_macro_f1": 0.9559180862385228,
+  "gpu": "Tesla T4",
+  "torch": "2.11.0+cu130",
+  "hp": {
+    "epochs": 1,
+    "batch_size": 64,
+    "lr": 0.0005,
+    "weight_decay": 0.0001,
+    "img_size": 224,
+    "workers": 2,
+    "amp": true,
+    "seed": 42
+  },
+  "epochs": [
+    {
+      "epoch": 1,
+      "epoch_sec": 87.24020077600005,
+      "train": {
+        "loss": 0.30006391351873224,
+        "seconds": 77.32943406100003,
+        "data_wait_sec": 18.4090806650006,
+        "images": 14080
+      },
+      "val": {
+        "loss": 0.1281370537643287,
+        "acc": 0.9618563254926892,
+        "macro_f1": 0.9559180862385228,
+        "seconds": 9.885296228000016,
+        "images": 3146
+      }
+    }
+  ]
+}
