@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { DrawEvents } from 'leaflet'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { MapView } from './MapView'
@@ -29,6 +30,18 @@ type PolygonMockProps = {
 
 const editControlProps = vi.fn<(props: EditControlMockProps) => void>()
 
+function renderMapView() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <MapView />
+    </QueryClientProvider>,
+  )
+}
+
 vi.mock('react-leaflet', () => ({
   MapContainer: ({ children, center, zoom }: MapContainerMockProps) => (
     <div data-testid="map-container" data-center={center.join(',')} data-zoom={zoom}>
@@ -53,7 +66,7 @@ vi.mock('react-leaflet-draw', () => ({
 
 describe('MapView', () => {
   it('renders the Romania map with its configured initial view', () => {
-    render(<MapView />)
+    renderMapView()
 
     expect(screen.getByLabelText('Map of Romania')).toBeInTheDocument()
     expect(screen.getByTestId('map-container')).toHaveAttribute('data-center', '45.9432,24.9668')
@@ -61,7 +74,7 @@ describe('MapView', () => {
   })
 
   it('renders imagery, boundary, and polygon drawing controls', () => {
-    render(<MapView />)
+    renderMapView()
 
     expect(screen.getAllByTestId('tile-layer')).toHaveLength(2)
     expect(screen.getByTestId('feature-group')).toBeInTheDocument()
@@ -82,10 +95,8 @@ describe('MapView', () => {
     )
   })
 
-  it('converts created polygon coordinates to backend longitude-latitude order', () => {
-    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => {})
-
-    render(<MapView />)
+  it('opens the parcel form after converting polygon coordinates', async () => {
+    renderMapView()
 
     const onCreated = editControlProps.mock.lastCall?.[0].onCreated
     if (!onCreated) {
@@ -96,23 +107,21 @@ describe('MapView', () => {
       layer: {
         getLatLngs: () => [
           [
-            { lat: 46.1, lng: 24.5 },
-            { lat: 46.2, lng: 24.6 },
+            { lat: 45, lng: 25 },
+            { lat: 45, lng: 25.1 },
+            { lat: 45.1, lng: 25 },
           ],
         ],
       },
     } as DrawEvents.Created)
 
-    expect(consoleLog).toHaveBeenCalledWith('Backend coordinates: ', [
-      [24.5, 46.1],
-      [24.6, 46.2],
-    ])
-
-    consoleLog.mockRestore()
+    await waitFor(() => {
+      expect(screen.getByText('Parcel name')).toBeInTheDocument()
+    })
   })
 
   it('loads and renders parcels returned by MSW', async () => {
-    render(<MapView />)
+    renderMapView()
 
     await waitFor(() => {
       expect(screen.getAllByTestId('parcel-polygon').length).toBeGreaterThanOrEqual(2)
