@@ -8,7 +8,7 @@ In the browser all paths are under `/api` (nginx removes the prefix before the b
 
 ## Implementation status
 
-Every endpoint below is published in the backend so the OpenAPI document at `http://localhost:8080/v3/api-docs` lists it and the frontend can run `npm run gen:api`. Until a ticket implements an endpoint, calling it returns `501 Not Implemented` with a Problem Details body. The request and response shapes in this document are the real DTOs the endpoints will use, so the generated types are correct from the start.
+Every endpoint below is published in the backend so the OpenAPI document at `http://localhost:8080/v3/api-docs` lists it and the frontend can run `npm run gen:api`. Endpoints that are not implemented yet return `501 Not Implemented` with a Problem Details body. The request and response shapes in this document are the real DTOs the endpoints will use, so the generated types are correct from the start.
 
 
 ## Decisions
@@ -33,7 +33,7 @@ The points that affect the frontend most:
 
 - **Authentication.** Send `Authorization: Bearer <token>` on every request except register and login. The token expires after 1 hour and there is no refresh, so a 401 means the user must go back to the login page.
 - **Live alerts (SSE).** Plain `EventSource` cannot be used, because it cannot send the header. Use a fetch-based SSE client. nginx proxy buffering must stay off for this path.
-- **Photo upload.** JPEG or PNG, up to 10 MB. nginx needs `client_max_body_size 10m`, because the default of 1 MB returns 413.
+- **Photo upload.** JPEG or PNG, up to 10 MB. nginx allows an 11 MB request so multipart overhead fits; the default of 1 MB returns 413.
 - **Coordinates.** Parcel shapes are GeoJSON polygons, where each position is `[longitude, latitude]`. Leaflet uses `[latitude, longitude]`, so the frontend swaps the order when drawing a parcel and when saving one.
 - **Errors.** Every error has the Problem Details shape, so one handler can show `title` and `detail` for all of them.
 - **Alerts history.** There is none in Demo 1. Alerts show live while the app is open, and the email is the record.
@@ -218,7 +218,7 @@ Response 201: the diagnosis (see below). Every answer from the AI service is sav
 
 Errors:
 
-- 400 if `image` or `parcelId` is missing, or the file is not a JPEG or PNG image.
+- 400 if `image` or `parcelId` is missing, `parcelId` is not a UUID, or the file is not a JPEG or PNG image.
 - 401 for a missing, invalid or expired token.
 - 404 if the parcel does not exist or belongs to another user.
 - 413 if the file is larger than 10 MB.
