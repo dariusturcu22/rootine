@@ -6,7 +6,7 @@ export function MainLayout() {
       <header style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #ddd' }}>
         <strong>Rootine</strong>
       </header>
-      <main style={{ flex: 1, minHeight: 0 }}>
+      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         <Outlet />
       </main>
     </div>
