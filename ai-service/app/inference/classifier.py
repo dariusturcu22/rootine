@@ -11,7 +11,7 @@ import onnxruntime as ort
 @dataclass(frozen=True)
 class Label:
     class_id: int
-    demo1_id: int
+    demo1_id: int | None
     crop: str
     disease: str
     eppo_code: str
@@ -37,7 +37,7 @@ def load_labels(path: Path) -> list[Label]:
         return [
             Label(
                 class_id=int(row["class_id"]),
-                demo1_id=int(row["demo1_id"]),
+                demo1_id=int(row["demo1_id"]) if row["demo1_id"] else None,
                 crop=row["crop"],
                 disease=row["disease"],
                 eppo_code=row["eppo_code"],
