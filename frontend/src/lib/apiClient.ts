@@ -1,6 +1,48 @@
 import { API_BASE_URL } from '../config/env'
 import { useAuthStore } from '../features/auth/store/authStore'
 
+export type DiagnosisStatus = 'confident' | 'unsure' | 'invalid_image' | 'crop_not_supported'
+
+export interface Diagnosis {
+  id: string
+  parcelId: string
+  status: DiagnosisStatus
+  crop: string
+  cropCheck: 'ok' | 'mismatch' | null
+  topPredictions: Array<{
+    label: string
+    disease: string
+    probability: number
+  }>
+  supportLevel: 'lab_and_field_tested' | 'lab_only' | 'not_supported'
+  modelVersion: string
+  createdAt: string
+}
+
+export function createDiagnosis(image: File, parcelId: string): Promise<Diagnosis> {
+  const formData = new FormData()
+  formData.append('image', image)
+  formData.append('parcelId', parcelId)
+
+  return apiFetch<Diagnosis>('/diagnoses', {
+    method: 'POST',
+    body: formData,
+  })
+}
+
+export interface Crop {
+  crop: string
+  diagnosisSupported: boolean
+  weatherSupported: boolean
+  supportLevel: 'lab_and_field_tested' | 'lab_only' | 'not_supported'
+  weatherRules: string[]
+  classes: string[]
+}
+
+export function getCrops(): Promise<Crop[]> {
+  return apiFetch<Crop[]>('/crops')
+}
+
 export class ApiError extends Error {
   readonly status: number
 
@@ -10,6 +52,23 @@ export class ApiError extends Error {
     this.status = status
   }
 }
+
+export type Position = [number, number]
+
+export type ParcelGeometry = {
+  type: 'Polygon'
+  coordinates: Position[][]
+}
+
+export type Parcel = {
+  id: string
+  name: string
+  crop: string
+  geometry: ParcelGeometry
+  createdAt: string
+}
+
+export type ParcelInput = Omit<Parcel, 'id' | 'createdAt'>
 
 /** fetch wrapper: prefixes the API base path, adds the JWT and parses JSON. */
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -31,4 +90,30 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     return undefined as T
   }
   return (await response.json()) as T
+}
+
+export function getParcels(): Promise<Parcel[]> {
+  return apiFetch<Parcel[]>('/parcels')
+}
+
+export function getParcel(id: string): Promise<Parcel> {
+  return apiFetch<Parcel>(`/parcels/${id}`)
+}
+
+export function createParcel(parcel: ParcelInput): Promise<Parcel> {
+  return apiFetch<Parcel>('/parcels', {
+    method: 'POST',
+    body: JSON.stringify(parcel),
+  })
+}
+
+export function updateParcel(id: string, parcel: ParcelInput): Promise<Parcel> {
+  return apiFetch<Parcel>(`/parcels/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(parcel),
+  })
+}
+
+export function deleteParcel(id: string): Promise<void> {
+  return apiFetch<void>(`/parcels/${id}`, { method: 'DELETE' })
 }
