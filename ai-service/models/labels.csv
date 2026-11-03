@@ -1,5 +1,5 @@
 class_id,demo1_id,crop,disease,eppo_code,weather_rule,source_dataset,license
-0,,apple,apple_scab,VENTIN,mills,mohanty/PlantVillage,CC BY-SA 3.0
+0,,apple,apple_scab,VENTIN,none,mohanty/PlantVillage,CC BY-SA 3.0
 1,,apple,black_rot,BOTRO,none,mohanty/PlantVillage,CC BY-SA 3.0
 2,,apple,cedar_apple_rust,GYMJVI,none,mohanty/PlantVillage,CC BY-SA 3.0
 3,,apple,healthy,,none,mohanty/PlantVillage,CC BY-SA 3.0

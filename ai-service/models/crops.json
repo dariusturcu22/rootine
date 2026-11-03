@@ -1,105 +1,91 @@
 {
   "crops": {
     "apple": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": true,
-      "demo1_active": false,
       "support_level": "lab_only",
-      "weather_rules": ["mills"]
+      "weather_rules": []
     },
     "blueberry": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": false,
-      "demo1_active": false,
       "reason": "single_class_in_plantvillage",
       "support_level": "unsupported",
       "weather_rules": []
     },
     "cherry": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": true,
-      "demo1_active": false,
       "support_level": "lab_only",
       "weather_rules": []
     },
     "corn": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": true,
-      "demo1_active": false,
       "support_level": "lab_only",
       "weather_rules": []
     },
     "grape": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": true,
-      "demo1_active": false,
       "support_level": "lab_only",
       "weather_rules": []
     },
     "orange": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": false,
-      "demo1_active": false,
       "reason": "single_class_in_plantvillage",
       "support_level": "unsupported",
       "weather_rules": []
     },
     "peach": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": true,
-      "demo1_active": false,
       "support_level": "lab_only",
       "weather_rules": []
     },
     "pepper": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": true,
-      "demo1_active": false,
       "support_level": "lab_only",
       "weather_rules": []
     },
     "potato": {
       "enabled": true,
       "diagnosis_supported": true,
-      "demo1_active": true,
       "support_level": "lab_only",
       "weather_rules": ["hutton"]
     },
     "raspberry": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": false,
-      "demo1_active": false,
       "reason": "single_class_in_plantvillage",
       "support_level": "unsupported",
       "weather_rules": []
     },
     "soybean": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": false,
-      "demo1_active": false,
       "reason": "single_class_in_plantvillage",
       "support_level": "unsupported",
       "weather_rules": []
     },
     "squash": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": false,
-      "demo1_active": false,
       "reason": "single_class_in_plantvillage",
       "support_level": "unsupported",
       "weather_rules": []
     },
     "strawberry": {
-      "enabled": true,
+      "enabled": false,
       "diagnosis_supported": true,
-      "demo1_active": false,
       "support_level": "lab_only",
       "weather_rules": []
     },
     "tomato": {
       "enabled": true,
       "diagnosis_supported": true,
-      "demo1_active": true,
       "support_level": "lab_only",
       "weather_rules": ["hutton", "tomcast"]
     }
