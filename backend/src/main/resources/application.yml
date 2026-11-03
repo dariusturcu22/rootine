@@ -43,4 +43,6 @@ app:
     secret: ${JWT_SECRET:}
   upload-dir: ${UPLOAD_DIR:./uploads}
   ai-service-url: ${AI_SERVICE_URL:http://localhost:8000}
+  ai-service-connect-timeout: ${AI_SERVICE_CONNECT_TIMEOUT:2s}
+  ai-service-read-timeout: ${AI_SERVICE_READ_TIMEOUT:30s}
   mail-from: ${MAIL_FROM:no-reply@rootine.local}
