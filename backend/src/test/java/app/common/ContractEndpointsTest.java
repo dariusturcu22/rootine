@@ -10,6 +10,7 @@ import app.Application;
 import app.common.config.OpenApiConfig;
 import app.common.error.EndpointStub;
 import app.common.error.ProblemDetailResponse;
+import app.diagnosis.service.DiagnosisService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -65,6 +67,7 @@ class ContractEndpointsTest {
           "/alerts/stream");
 
   @Autowired private MockMvc mockMvc;
+  @MockitoBean private DiagnosisService diagnosisService;
 
   @Test
   void unimplementedEndpointReturnsNotImplementedProblemDetails() throws Exception {

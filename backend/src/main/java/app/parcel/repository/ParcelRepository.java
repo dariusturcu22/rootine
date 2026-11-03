@@ -14,4 +14,7 @@ public interface ParcelRepository extends JpaRepository<Parcel, UUID> {
 
   /** Finds a parcel by id but only if it belongs to the given owner, so 404 hides others' ids. */
   Optional<Parcel> findByIdAndOwnerId(UUID id, UUID ownerId);
+
+  /** Checks parcel ownership without loading the parcel. */
+  boolean existsByIdAndOwnerId(UUID id, UUID ownerId);
 }
