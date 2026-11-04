@@ -8,7 +8,7 @@ In the browser all paths are under `/api` (nginx removes the prefix before the b
 
 ## Implementation status
 
-Every endpoint below is published in the backend so the OpenAPI document at `http://localhost:8080/v3/api-docs` lists it and the frontend can run `npm run gen:api`. The demo path supports crop listing, parcel creation/listing, and diagnosis upload. Other endpoints that are not implemented yet return `501 Not Implemented` with a Problem Details body.
+Every endpoint below is published in the backend so the OpenAPI document at `http://localhost:8080/v3/api-docs` lists it and the frontend can run `npm run gen:api`. The demo path supports crop listing, parcel creation/listing/replacement, and diagnosis upload. Other endpoints that are not implemented yet return `501 Not Implemented` with a Problem Details body.
 
 
 ## Decisions
@@ -201,12 +201,12 @@ The polygon must be valid: a closed ring (the first and the last position are th
 | `POST /parcels` | `name`, `crop`, `geometry` | 201, the parcel (implemented) |
 | `GET /parcels` | | 200, a list of the user's parcels, newest first (implemented) |
 | `GET /parcels/{id}` | | 200, the parcel |
-| `PUT /parcels/{id}` | `name`, `crop`, `geometry` | 200, the parcel |
+| `PUT /parcels/{id}` | `name`, `crop`, `geometry` | 200, the parcel (implemented) |
 | `DELETE /parcels/{id}` | | 204 |
 
 `PUT` replaces all three fields, so none can be left out. The list has no pagination in Demo 1. Deleting a parcel also deletes its diagnoses and its stored risk results.
 
-Parcel creation and listing are implemented for the demo. Other parcel operations still return 501.
+Parcel creation, listing and replacement are implemented for the demo. Getting one parcel and deleting a parcel still return 501.
 
 Errors:
 

@@ -90,6 +90,15 @@ Run (http://localhost:5173, `/api` is proxied to http://localhost:8080 with the 
 npm run dev
 ```
 
+For a live local-backend demo, create `frontend/.env.local` with:
+
+```dotenv
+VITE_DEMO_MODE=true
+VITE_USE_MSW=false
+```
+
+The backend must have `DEMO_TOKEN_ENABLED=true`. The frontend then requests a demo JWT at startup and sends it with API calls. MSW remains enabled by default for development and tests. For Docker Compose, set `VITE_DEMO_MODE=true` in the root `.env` and rebuild the `web` service; the backend demo-token endpoint must also be enabled. Do not enable demo-token mode outside a local demo.
+
 Test, lint, typecheck, build, format:
 
 ```bash

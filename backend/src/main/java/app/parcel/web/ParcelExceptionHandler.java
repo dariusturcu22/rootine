@@ -1,6 +1,7 @@
 package app.parcel.web;
 
 import app.parcel.service.InvalidParcelException;
+import app.parcel.service.ParcelNotFoundException;
 import app.parcel.service.ParcelOwnerNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -19,6 +20,11 @@ public class ParcelExceptionHandler {
 
   @ExceptionHandler(ParcelOwnerNotFoundException.class)
   public ProblemDetail handleMissingOwner(ParcelOwnerNotFoundException exception) {
+    return problem(HttpStatus.NOT_FOUND, exception.getMessage());
+  }
+
+  @ExceptionHandler(ParcelNotFoundException.class)
+  public ProblemDetail handleMissingParcel(ParcelNotFoundException exception) {
     return problem(HttpStatus.NOT_FOUND, exception.getMessage());
   }
 

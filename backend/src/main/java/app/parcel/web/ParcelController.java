@@ -36,8 +36,8 @@ import org.springframework.web.bind.annotation.RestController;
  * Parcels: a crop and a polygon per parcel. A user sees only their own parcels, so every endpoint
  * needs a token.
  *
- * <p>Creation and listing are implemented for the demo. Other parcel operations remain published as
- * 501 stubs.
+ * <p>Creation, listing and replacement are implemented for the demo. Other parcel operations remain
+ * published as 501 stubs.
  */
 @RestController
 @RequestMapping(path = "/parcels", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -126,8 +126,8 @@ public class ParcelController {
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
     @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
+        responseCode = "422",
+        description = "The request body or polygon geometry is invalid.",
         content =
             @Content(
                 mediaType = PROBLEM_JSON,
@@ -179,8 +179,10 @@ public class ParcelController {
   })
   @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ParcelResponse replaceParcel(
-      @PathVariable UUID id, @Valid @RequestBody ParcelRequest parcelRequest) {
-    throw notImplemented();
+      @PathVariable UUID id,
+      @AuthenticationPrincipal Jwt jwt,
+      @Valid @RequestBody ParcelRequest parcelRequest) {
+    return parcelService.replaceParcel(UUID.fromString(jwt.getSubject()), id, parcelRequest);
   }
 
   @Operation(

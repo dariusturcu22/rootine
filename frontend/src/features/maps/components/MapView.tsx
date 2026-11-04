@@ -167,6 +167,12 @@ export function MapView() {
   const updateParcelMutation = useMutation({
     mutationFn: ({ id, parcel }: { id: string; parcel: ParcelInput }) => updateParcel(id, parcel),
     onSuccess: async () => {
+      setDrawError(null)
+      await queryClient.invalidateQueries({ queryKey: ['parcels'] })
+      setEditControlVersion((version) => version + 1)
+    },
+    onError: async () => {
+      setDrawError('Unable to update parcel. Please try again.')
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
     },

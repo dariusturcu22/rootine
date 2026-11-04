@@ -2,7 +2,7 @@ import { http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useAuthStore } from '../features/auth/store/authStore'
 import { server } from '../test/msw/server'
-import { ApiError, apiFetch, createParcel, getParcels } from './apiClient'
+import { ApiError, apiFetch, createParcel, getDemoToken, getParcels } from './apiClient'
 
 describe('apiFetch', () => {
   afterEach(() => useAuthStore.getState().clear())
@@ -35,6 +35,16 @@ describe('apiFetch', () => {
     await apiFetch('/ping')
 
     expect(authorization).toBeNull()
+  })
+
+  it('gets the local demo access token', async () => {
+    const token = await getDemoToken()
+
+    expect(token).toEqual({
+      accessToken: 'demo-access-token',
+      tokenType: 'Bearer',
+      expiresIn: 3600,
+    })
   })
 
   it('throws ApiError with the status for non-2xx responses', async () => {

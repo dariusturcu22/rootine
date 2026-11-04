@@ -89,7 +89,10 @@ services:
       retries: 6
 
   web:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_DEMO_MODE: ${VITE_DEMO_MODE:-false}
     ports:
       - "80:80"
     depends_on:

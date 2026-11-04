@@ -37,8 +37,8 @@ import org.springframework.test.web.servlet.MockMvc;
  * Checks demo endpoint behavior and OpenAPI paths without needing a database or a message broker.
  * The frontend generates its API types from {@code /v3/api-docs}.
  *
- * <p>This is a unit test ({@code *Test}, surefire), so it runs without Docker. The data, messaging
- * and mail autoconfigurations are excluded because the stub controllers do not touch them yet.
+ * <p>This is a unit test ({@code *Test}, surefire), so it runs without Docker. Data, messaging and
+ * mail autoconfigurations are excluded; persistence-dependent services are mocked here.
  */
 @SpringBootTest(
     classes = Application.class,
@@ -173,6 +173,18 @@ class ContractEndpointsTest {
         .perform(get("/parcels").with(jwt().jwt(token -> token.subject(ownerId.toString()))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value(parcelId.toString()));
+
+    given(parcelService.replaceParcel(eq(ownerId), eq(parcelId), any(ParcelRequest.class)))
+        .willReturn(response);
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                    "/parcels/{id}", parcelId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(parcelId.toString()));
   }
 
   @Test

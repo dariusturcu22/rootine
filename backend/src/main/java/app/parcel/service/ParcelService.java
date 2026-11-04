@@ -15,7 +15,7 @@ import org.locationtech.jts.geom.Polygon;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Creates and lists parcels belonging to the authenticated user. */
+/** Manages parcels belonging to the authenticated user. */
 @Service
 public class ParcelService {
 
@@ -46,6 +46,20 @@ public class ParcelService {
     return parcelRepository.findByOwnerIdOrderByCreatedAtDesc(ownerId).stream()
         .map(parcelMapper::toResponse)
         .toList();
+  }
+
+  @Transactional
+  public ParcelResponse replaceParcel(UUID ownerId, UUID parcelId, ParcelRequest request) {
+    Parcel parcel =
+        parcelRepository
+            .findByIdAndOwnerId(parcelId, ownerId)
+            .orElseThrow(ParcelNotFoundException::new);
+    Polygon polygon = toValidPolygon(request.geometry());
+
+    parcel.setName(request.name());
+    parcel.setCrop(request.crop());
+    parcel.setGeometry(polygon);
+    return parcelMapper.toResponse(parcelRepository.save(parcel));
   }
 
   private Polygon toValidPolygon(app.parcel.dto.PolygonGeometry geometry) {
