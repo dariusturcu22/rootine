@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react'
-import { createDiagnosis, type Diagnosis } from '../../../lib/apiClient'
+import { useQuery } from '@tanstack/react-query'
+import { createDiagnosis, getParcels, type Diagnosis } from '../../../lib/apiClient'
 
 interface ImageUploadProps {
-  parcelId: string
+  parcelId?: string
 }
 
 export function ImageUpload({ parcelId }: ImageUploadProps) {
+  const { data: parcels = [], isError: parcelsError } = useQuery({
+    queryKey: ['parcels'],
+    queryFn: getParcels,
+  })
+  const [selectedParcelId, setSelectedParcelId] = useState(parcelId ?? '')
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null)
@@ -58,11 +64,16 @@ export function ImageUpload({ parcelId }: ImageUploadProps) {
       return
     }
 
+    if (!selectedParcelId) {
+      setError('Please select a parcel first.')
+      return
+    }
+
     setIsSubmitting(true)
     setError(null)
 
     try {
-      const result = await createDiagnosis(file, parcelId)
+      const result = await createDiagnosis(file, selectedParcelId)
       setDiagnosis(result)
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Unable to submit the image.')
@@ -76,6 +87,22 @@ export function ImageUpload({ parcelId }: ImageUploadProps) {
       <h1 id="diagnosis-title">Leaf diagnosis</h1>
 
       <form onSubmit={handleSubmit}>
+        <label htmlFor="diagnosis-parcel">Parcel</label>
+        <select
+          id="diagnosis-parcel"
+          value={selectedParcelId}
+          onChange={(event) => setSelectedParcelId(event.target.value)}
+          disabled={parcels.length === 0}
+          required
+        >
+          <option value="">Select a parcel</option>
+          {parcels.map((parcel) => (
+            <option key={parcel.id} value={parcel.id}>
+              {parcel.name} ({parcel.crop})
+            </option>
+          ))}
+        </select>
+
         <label htmlFor="leaf-image">Leaf image</label>
         <input
           id="leaf-image"
@@ -97,6 +124,8 @@ export function ImageUpload({ parcelId }: ImageUploadProps) {
           {isSubmitting ? 'Submitting...' : 'Submit for diagnosis'}
         </button>
       </form>
+
+      {parcelsError && <p role="alert">Unable to load parcels. Please try again.</p>}
 
       {error && <p role="alert">{error}</p>}
 

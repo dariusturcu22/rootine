@@ -7,7 +7,7 @@ import './index.css'
 import { queryClient } from './lib/queryClient'
 
 async function start() {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.DEV && import.meta.env.VITE_USE_MSW === 'true') {
     const { worker } = await import('./test/msw/browser')
     await worker.start()
   }
