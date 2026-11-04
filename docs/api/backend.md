@@ -8,7 +8,7 @@ In the browser all paths are under `/api` (nginx removes the prefix before the b
 
 ## Implementation status
 
-Every endpoint below is published in the backend so the OpenAPI document at `http://localhost:8080/v3/api-docs` lists it and the frontend can run `npm run gen:api`. Endpoints that are not implemented yet return `501 Not Implemented` with a Problem Details body. The request and response shapes in this document are the real DTOs the endpoints will use, so the generated types are correct from the start.
+Every endpoint below is published in the backend so the OpenAPI document at `http://localhost:8080/v3/api-docs` lists it and the frontend can run `npm run gen:api`. The demo path supports crop listing, parcel creation/listing, and diagnosis upload. Other endpoints that are not implemented yet return `501 Not Implemented` with a Problem Details body.
 
 
 ## Decisions
@@ -31,7 +31,7 @@ The backend team decided these points. The frontend adapts to them.
 
 The points that affect the frontend most:
 
-- **Authentication.** Send `Authorization: Bearer <token>` on every request except register and login. The token expires after 1 hour and there is no refresh, so a 401 means the user must go back to the login page.
+- **Authentication.** Send `Authorization: Bearer <token>` on every protected request. For local demos only, `POST /auth/demo-token` can issue a one-hour token when `DEMO_TOKEN_ENABLED=true`; otherwise register and login are the only public auth routes.
 - **Live alerts (SSE).** Plain `EventSource` cannot be used, because it cannot send the header. Use a fetch-based SSE client. nginx proxy buffering must stay off for this path.
 - **Photo upload.** JPEG or PNG, up to 10 MB. nginx allows an 11 MB request so multipart overhead fits; the default of 1 MB returns 413.
 - **Coordinates.** Parcel shapes are GeoJSON polygons, where each position is `[longitude, latitude]`. Leaflet uses `[latitude, longitude]`, so the frontend swaps the order when drawing a parcel and when saving one.
@@ -51,7 +51,7 @@ The points that affect the frontend most:
 | 409 | Registration conflicts with an existing email address. |
 | 413 | The uploaded file exceeds 10 MB. |
 | 422 | A JSON request body or parcel geometry is invalid. |
-| 502 | The AI service is unavailable or returned an error while processing a diagnosis or risk request. |
+| 502 | The AI service is unavailable or returned an error while processing a crop-list, diagnosis or risk request. |
 
 Errors use `application/problem+json` and this shape:
 
@@ -66,7 +66,7 @@ Errors use `application/problem+json` and this shape:
 
 ## Auth
 
-Register and login are the only endpoints that do not need a token. Every other endpoint needs `Authorization: Bearer <token>` and returns 401 without it.
+Register and login do not need a token. In the local demo configuration, `POST /auth/demo-token` is also public when enabled. Every other endpoint needs `Authorization: Bearer <token>` and returns 401 without it.
 
 ### POST /auth/register
 
@@ -108,6 +108,19 @@ Errors:
 - 401 for a wrong email or a wrong password. Both give the same answer, so nobody can learn which emails have an account.
 - 422 if the body is invalid.
 
+### POST /auth/demo-token (local demo only)
+
+This endpoint is available only when the backend starts with `DEMO_TOKEN_ENABLED=true`. It creates
+the shared local demo user if needed and returns a one-hour JWT for that user. The endpoint has no
+credentials and must only be enabled in a local demo environment; leave it disabled in deployed
+environments. The token can be sent as `Authorization: Bearer <accessToken>`.
+
+Response 200:
+
+```json
+{ "accessToken": "<jwt>", "tokenType": "Bearer", "expiresIn": 3600 }
+```
+
 ### GET /me
 
 Returns the user the token belongs to.
@@ -122,7 +135,7 @@ Error: 401 for a missing, invalid or expired token.
 
 ## Crops
 
-The frontend never hardcodes the crop list. The backend returns the list from the AI service (`GET /v1/crops`).
+The frontend never hardcodes the crop list. The backend returns the list from the AI service (`GET /v1/crops`). This endpoint is implemented and requires a token.
 
 ### GET /crops
 
@@ -185,13 +198,15 @@ The polygon must be valid: a closed ring (the first and the last position are th
 
 | Method and path | Request | Response |
 |---|---|---|
-| `POST /parcels` | `name`, `crop`, `geometry` | 201, the parcel |
-| `GET /parcels` | | 200, a list of the user's parcels, newest first |
+| `POST /parcels` | `name`, `crop`, `geometry` | 201, the parcel (implemented) |
+| `GET /parcels` | | 200, a list of the user's parcels, newest first (implemented) |
 | `GET /parcels/{id}` | | 200, the parcel |
 | `PUT /parcels/{id}` | `name`, `crop`, `geometry` | 200, the parcel |
 | `DELETE /parcels/{id}` | | 204 |
 
 `PUT` replaces all three fields, so none can be left out. The list has no pagination in Demo 1. Deleting a parcel also deletes its diagnoses and its stored risk results.
+
+Parcel creation and listing are implemented for the demo. Other parcel operations still return 501.
 
 Errors:
 

@@ -36,6 +36,9 @@ On Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
+The example enables `DEMO_TOKEN_ENABLED` for a local demo. The endpoint issues a token for a shared
+demo user without credentials; keep this option disabled outside local development.
+
 ## Run everything with Docker
 
 ```bash
