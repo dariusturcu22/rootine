@@ -43,6 +43,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
+      DEMO_TOKEN_ENABLED: ${DEMO_TOKEN_ENABLED:-false}
       UPLOAD_DIR: ${UPLOAD_DIR}
       AI_SERVICE_URL: ${AI_SERVICE_URL}
       AI_SERVICE_CONNECT_TIMEOUT: ${AI_SERVICE_CONNECT_TIMEOUT:-2s}
@@ -88,7 +89,10 @@ services:
       retries: 6
 
   web:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_DEMO_MODE: ${VITE_DEMO_MODE:-false}
     ports:
       - "80:80"
     depends_on:

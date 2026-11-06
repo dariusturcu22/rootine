@@ -88,6 +88,9 @@ function isValidGeometry(geometry: ParcelInput['geometry']): boolean {
 
 /** Default handlers shared by all tests and the local development browser. */
 export const handlers: RequestHandler[] = [
+  http.post('*/api/auth/demo-token', () =>
+    HttpResponse.json({ accessToken: 'demo-access-token', tokenType: 'Bearer', expiresIn: 3600 }),
+  ),
   http.get('*/api/crops', () => HttpResponse.json(crops)),
 
   http.post('*/api/diagnoses', async ({ request }) => {

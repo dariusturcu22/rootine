@@ -41,6 +41,8 @@ app:
   jwt:
     # HMAC secret, at least 32 bytes. No default on purpose: the app must not start without it.
     secret: ${JWT_SECRET:}
+  demo-token:
+    enabled: ${DEMO_TOKEN_ENABLED:false}
   upload-dir: ${UPLOAD_DIR:./uploads}
   ai-service-url: ${AI_SERVICE_URL:http://localhost:8000}
   ai-service-connect-timeout: ${AI_SERVICE_CONNECT_TIMEOUT:2s}

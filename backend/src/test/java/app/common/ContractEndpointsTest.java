@@ -1,5 +1,8 @@
 package app.common;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -7,11 +10,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import app.Application;
+import app.aiclient.AiServiceClient;
+import app.aiclient.AiServiceException;
 import app.common.config.OpenApiConfig;
-import app.common.error.EndpointStub;
 import app.common.error.ProblemDetailResponse;
 import app.diagnosis.service.DiagnosisService;
+import app.parcel.dto.ParcelRequest;
+import app.parcel.dto.ParcelResponse;
+import app.parcel.dto.PolygonGeometry;
+import app.parcel.service.ParcelService;
+import app.user.dto.LoginResponse;
+import app.user.service.DemoTokenService;
+import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,24 +34,25 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Checks the two promises of the contract endpoint stubs without needing a database or a message
- * broker: every published endpoint that is not implemented yet returns a 501 Problem Details
- * response, and the OpenAPI document at {@code /v3/api-docs} lists every path from {@code
- * docs/api/backend.md}. The frontend generates its API types from that document.
+ * Checks demo endpoint behavior and OpenAPI paths without needing a database or a message broker.
+ * The frontend generates its API types from {@code /v3/api-docs}.
  *
- * <p>This is a unit test ({@code *Test}, surefire), so it runs without Docker. The data, messaging
- * and mail autoconfigurations are excluded because the stub controllers do not touch them yet.
+ * <p>This is a unit test ({@code *Test}, surefire), so it runs without Docker. Data, messaging and
+ * mail autoconfigurations are excluded; persistence-dependent services are mocked here.
  */
 @SpringBootTest(
     classes = Application.class,
-    properties = {"spring.autoconfigure.exclude=" + ContractEndpointsTest.EXCLUDED_AUTOCONFIG})
+    properties = {
+      "spring.autoconfigure.exclude=" + ContractEndpointsTest.EXCLUDED_AUTOCONFIG,
+      "app.demo-token.enabled=true"
+    })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
 class ContractEndpointsTest {
 
   /**
-   * Autoconfigurations the stub controllers do not need yet. Excluding them lets the OpenAPI
-   * document build without a database or a message broker.
+   * Autoconfigurations the mocked controllers do not need. Excluding them lets the OpenAPI document
+   * build without a database or a message broker.
    */
   static final String EXCLUDED_AUTOCONFIG =
       "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,"
@@ -56,6 +69,7 @@ class ContractEndpointsTest {
       List.of(
           "/auth/register",
           "/auth/login",
+          "/auth/demo-token",
           "/me",
           "/crops",
           "/parcels",
@@ -68,25 +82,115 @@ class ContractEndpointsTest {
 
   @Autowired private MockMvc mockMvc;
   @MockitoBean private DiagnosisService diagnosisService;
+  @MockitoBean private AiServiceClient aiServiceClient;
+  @MockitoBean private ParcelService parcelService;
+  @MockitoBean private DemoTokenService demoTokenService;
 
   @Test
-  void unimplementedEndpointReturnsNotImplementedProblemDetails() throws Exception {
+  void demoTokenEndpointReturnsTheConfiguredTokenResponse() throws Exception {
+    given(demoTokenService.issueToken())
+        .willReturn(new LoginResponse("demo.jwt.token", "Bearer", 3600));
+
     mockMvc
-        .perform(get("/crops").with(jwt()))
-        .andExpect(status().isNotImplemented())
-        .andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
-        .andExpect(jsonPath("$.status").value(501))
-        .andExpect(jsonPath("$.title").value("Not Implemented"))
-        .andExpect(jsonPath("$.detail").value(EndpointStub.NOT_IMPLEMENTED_DETAIL));
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post(
+                "/auth/demo-token"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.accessToken").value("demo.jwt.token"))
+        .andExpect(jsonPath("$.tokenType").value("Bearer"))
+        .andExpect(jsonPath("$.expiresIn").value(3600));
   }
 
   @Test
-  void anotherUnimplementedEndpointAlsoReturnsNotImplemented() throws Exception {
+  void cropEndpointReturnsTheAiServiceCropList() throws Exception {
+    given(aiServiceClient.getCrops())
+        .willReturn(
+            List.of(
+                new app.aiclient.CropResponse(
+                    "potato",
+                    true,
+                    true,
+                    "lab_only",
+                    List.of("hutton"),
+                    List.of("early_blight", "healthy", "late_blight"))));
+
     mockMvc
-        .perform(get("/parcels").with(jwt()))
-        .andExpect(status().isNotImplemented())
+        .perform(get("/crops").with(jwt()))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].crop").value("potato"))
+        .andExpect(jsonPath("$[0].supportLevel").value("lab_only"))
+        .andExpect(jsonPath("$[0].classes[2]").value("late_blight"));
+  }
+
+  @Test
+  void cropEndpointMapsAiServiceFailuresTo502ProblemDetails() throws Exception {
+    given(aiServiceClient.getCrops()).willThrow(new AiServiceException("unavailable"));
+
+    mockMvc
+        .perform(get("/crops").with(jwt()))
+        .andExpect(status().isBadGateway())
         .andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
-        .andExpect(jsonPath("$.status").value(501));
+        .andExpect(jsonPath("$.status").value(502));
+  }
+
+  @Test
+  void parcelEndpointsCreateAndListTheAuthenticatedUsersParcels() throws Exception {
+    UUID ownerId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    UUID parcelId = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
+    ParcelResponse response =
+        new ParcelResponse(
+            parcelId,
+            "North field",
+            "potato",
+            new PolygonGeometry(
+                "Polygon",
+                List.of(
+                    List.of(
+                        List.of(23.59, 46.77),
+                        List.of(23.60, 46.77),
+                        List.of(23.60, 46.78),
+                        List.of(23.59, 46.78),
+                        List.of(23.59, 46.77)))),
+            Instant.parse("2026-11-01T08:00:00Z"));
+    given(parcelService.createParcel(eq(ownerId), any(ParcelRequest.class))).willReturn(response);
+    given(parcelService.listParcels(ownerId)).willReturn(List.of(response));
+
+    String body =
+        """
+        {"name":"North field","crop":"potato","geometry":{"type":"Polygon","coordinates":[[[23.59,46.77],[23.60,46.77],[23.60,46.78],[23.59,46.78],[23.59,46.77]]]}}
+        """;
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/parcels")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.id").value(parcelId.toString()))
+        .andExpect(jsonPath("$.geometry.coordinates[0][0][0]").value(23.59));
+
+    mockMvc
+        .perform(get("/parcels").with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(parcelId.toString()));
+
+    given(parcelService.replaceParcel(eq(ownerId), eq(parcelId), any(ParcelRequest.class)))
+        .willReturn(response);
+    mockMvc
+        .perform(
+            org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(
+                    "/parcels/{id}", parcelId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(parcelId.toString()));
+  }
+
+  @Test
+  void parcelEndpointsRequireAuthentication() throws Exception {
+    mockMvc.perform(get("/parcels")).andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/crops")).andExpect(status().isUnauthorized());
   }
 
   @Test

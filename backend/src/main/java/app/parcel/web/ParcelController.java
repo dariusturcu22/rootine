@@ -6,6 +6,7 @@ import app.common.config.OpenApiConfig;
 import app.common.error.ProblemDetailResponse;
 import app.parcel.dto.ParcelRequest;
 import app.parcel.dto.ParcelResponse;
+import app.parcel.service.ParcelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -19,6 +20,8 @@ import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,8 +36,8 @@ import org.springframework.web.bind.annotation.RestController;
  * Parcels: a crop and a polygon per parcel. A user sees only their own parcels, so every endpoint
  * needs a token.
  *
- * <p>Published for the API contract but not implemented yet, so every call returns 501 with a
- * Problem Details body.
+ * <p>Creation, listing and replacement are implemented for the demo. Other parcel operations remain
+ * published as 501 stubs.
  */
 @RestController
 @RequestMapping(path = "/parcels", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -43,6 +46,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ParcelController {
 
   private static final String PROBLEM_JSON = ProblemDetailResponse.MEDIA_TYPE;
+  private final ParcelService parcelService;
+
+  public ParcelController(ParcelService parcelService) {
+    this.parcelService = parcelService;
+  }
 
   @Operation(summary = "Create a parcel")
   @ApiResponses({
@@ -66,18 +74,12 @@ public class ParcelController {
             @Content(
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
-  public ParcelResponse createParcel(@Valid @RequestBody ParcelRequest parcelRequest) {
-    throw notImplemented();
+  public ParcelResponse createParcel(
+      @AuthenticationPrincipal Jwt jwt, @Valid @RequestBody ParcelRequest parcelRequest) {
+    return parcelService.createParcel(UUID.fromString(jwt.getSubject()), parcelRequest);
   }
 
   @Operation(
@@ -97,17 +99,10 @@ public class ParcelController {
             @Content(
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @GetMapping
-  public List<ParcelResponse> listParcels() {
-    throw notImplemented();
+  public List<ParcelResponse> listParcels(@AuthenticationPrincipal Jwt jwt) {
+    return parcelService.listParcels(UUID.fromString(jwt.getSubject()));
   }
 
   @Operation(summary = "Get one parcel")
@@ -131,8 +126,8 @@ public class ParcelController {
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
     @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
+        responseCode = "422",
+        description = "The request body or polygon geometry is invalid.",
         content =
             @Content(
                 mediaType = PROBLEM_JSON,
@@ -184,8 +179,10 @@ public class ParcelController {
   })
   @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ParcelResponse replaceParcel(
-      @PathVariable UUID id, @Valid @RequestBody ParcelRequest parcelRequest) {
-    throw notImplemented();
+      @PathVariable UUID id,
+      @AuthenticationPrincipal Jwt jwt,
+      @Valid @RequestBody ParcelRequest parcelRequest) {
+    return parcelService.replaceParcel(UUID.fromString(jwt.getSubject()), id, parcelRequest);
   }
 
   @Operation(

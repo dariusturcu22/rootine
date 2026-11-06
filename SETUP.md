@@ -36,6 +36,12 @@ On Windows PowerShell:
 Copy-Item .env.example .env
 ```
 
+The example leaves `JWT_SECRET` blank and disables demo-token mode. Before starting the backend or
+Docker Compose, generate a local secret with `openssl rand -base64 48` and put it in `.env`.
+For a local demo only, set both `DEMO_TOKEN_ENABLED=true` and `VITE_DEMO_MODE=true` in `.env`.
+The demo endpoint issues a token for a shared user without credentials; do not enable it outside
+local development.
+
 ## Run everything with Docker
 
 ```bash
@@ -87,6 +93,15 @@ Run (http://localhost:5173, `/api` is proxied to http://localhost:8080 with the 
 npm run dev
 ```
 
+For a live local-backend demo, create `frontend/.env.local` with:
+
+```dotenv
+VITE_DEMO_MODE=true
+VITE_USE_MSW=false
+```
+
+The backend must have `DEMO_TOKEN_ENABLED=true`. The frontend then requests a demo JWT at startup and sends it with API calls. MSW remains enabled by default for development and tests. For Docker Compose, set `VITE_DEMO_MODE=true` and `DEMO_TOKEN_ENABLED=true` in the root `.env`, then rebuild the `web` service. Do not enable demo-token mode outside a local demo.
+
 Test, lint, typecheck, build, format:
 
 ```bash
@@ -119,13 +134,13 @@ Start the database and the message broker:
 docker compose up -d db rabbitmq
 ```
 
-Run the backend. `JWT_SECRET` is required (at least 32 characters) and the app does not start without it. Other settings have development defaults that match `.env.example`.
+Run the backend. `JWT_SECRET` is required (at least 32 characters) and the app does not start without it. Generate one locally, for example with `openssl rand -base64 48`, and set it in your shell or ignored `.env` file. Other settings have development defaults that match `.env.example`.
 
 Bash:
 
 ```bash
 cd backend
-export JWT_SECRET="dev-secret-for-local-use-only-0123456789"
+export JWT_SECRET="$(openssl rand -base64 48)"
 ./mvnw spring-boot:run
 ```
 
@@ -133,7 +148,11 @@ PowerShell:
 
 ```powershell
 cd backend
-$env:JWT_SECRET = "dev-secret-for-local-use-only-0123456789"
+$rng = [Security.Cryptography.RandomNumberGenerator]::Create()
+$bytes = New-Object byte[] 48
+$rng.GetBytes($bytes)
+$rng.Dispose()
+$env:JWT_SECRET = [Convert]::ToBase64String($bytes)
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -142,6 +161,14 @@ Test. This runs unit tests (`*Test`, surefire) and integration tests (`*IT`, fai
 ```bash
 ./mvnw verify
 ```
+
+To run only the parcel ownership and authorization integration tests:
+
+```bash
+./mvnw -Dit.test=ParcelWorkflowIT verify
+```
+
+In PowerShell, run `.\mvnw.cmd "-Dit.test=ParcelWorkflowIT" verify`.
 
 Format the code (CI fails if the code is not formatted):
 

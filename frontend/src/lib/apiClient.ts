@@ -19,6 +19,16 @@ export interface Diagnosis {
   createdAt: string
 }
 
+export interface LoginResponse {
+  accessToken: string
+  tokenType: 'Bearer'
+  expiresIn: number
+}
+
+export function getDemoToken(): Promise<LoginResponse> {
+  return apiFetch<LoginResponse>('/auth/demo-token', { method: 'POST' })
+}
+
 export function createDiagnosis(image: File, parcelId: string): Promise<Diagnosis> {
   const formData = new FormData()
   formData.append('image', image)
