@@ -28,6 +28,13 @@ class ParcelWorkflowIT extends AbstractIntegrationTest {
   @Autowired private ParcelRepository parcelRepository;
 
   @Test
+  void rejectsInvalidBearerTokenWithUnauthorized() throws Exception {
+    mockMvc
+        .perform(get("/parcels").header("Authorization", "Bearer invalid.token.value"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   void createsAndListsOnlyTheAuthenticatedUsersParcels() throws Exception {
     UUID ownerId = createUser();
     UUID otherOwnerId = createUser();
