@@ -80,6 +80,25 @@ export type Parcel = {
 
 export type ParcelInput = Omit<Parcel, 'id' | 'createdAt'>
 
+export type RiskLevel = 'low' | 'medium' | 'high' | 'not_modelled'
+
+export interface DiseaseRisk {
+  disease: string
+  model: string
+  level: RiskLevel
+  riskIndex: number
+}
+
+export interface ParcelRisk {
+  parcelId: string
+  crop: string
+  level: RiskLevel
+  riskIndex: number
+  reason: string
+  diseases: DiseaseRisk[]
+  generatedAt: string
+}
+
 /** fetch wrapper: prefixes the API base path, adds the JWT and parses JSON. */
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
@@ -126,4 +145,8 @@ export function updateParcel(id: string, parcel: ParcelInput): Promise<Parcel> {
 
 export function deleteParcel(id: string): Promise<void> {
   return apiFetch<void>(`/parcels/${id}`, { method: 'DELETE' })
+}
+
+export function getParcelRisk(id: string): Promise<ParcelRisk> {
+  return apiFetch<ParcelRisk>(`/parcels/${id}/risk`)
 }
