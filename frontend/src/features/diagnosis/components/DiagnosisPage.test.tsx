@@ -52,15 +52,15 @@ describe('DiagnosisPage', () => {
     const parcelSelect = await screen.findByLabelText('Parcel')
     await user.selectOptions(parcelSelect, '7c9e6679-7425-40de-944b-e07fc1f90ae7')
     const file = new File(['leaf image'], 'leaf.png', { type: 'image/png' })
-    await user.upload(screen.getByLabelText('Leaf image'), file)
+    await user.upload(screen.getByLabelText(/Browse files or take a photo/), file)
     await user.click(screen.getByRole('button', { name: 'Submit for diagnosis' }))
 
     await waitFor(() => {
-      expect(screen.getByText('Diagnosis: early_blight')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Most likely diseases' })).toBeInTheDocument()
     })
-    expect(createDiagnosis).toHaveBeenCalledWith(
-      file,
-      '7c9e6679-7425-40de-944b-e07fc1f90ae7',
-    )
+    expect(screen.getByText(/Analyzed leaf from/)).toHaveTextContent('South field')
+    expect(screen.queryByLabelText('Parcel')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New review' })).toBeInTheDocument()
+    expect(createDiagnosis).toHaveBeenCalledWith(file, '7c9e6679-7425-40de-944b-e07fc1f90ae7')
   })
 })
