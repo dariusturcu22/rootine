@@ -159,9 +159,7 @@ public class DiagnosisService {
 
   private static DiagnosisResult toDiagnosisResult(PredictionResponse prediction) {
     if (prediction == null
-        || prediction.crop() == null
         || prediction.status() == null
-        || prediction.topPredictions() == null
         || prediction.supportLevel() == null
         || prediction.modelVersion() == null) {
       throw new AiServiceException("AI service returned an incomplete prediction.");
@@ -174,9 +172,11 @@ public class DiagnosisService {
               : parseEnum(CropCheck.class, prediction.cropCheck());
       SupportLevel supportLevel = parseEnum(SupportLevel.class, prediction.supportLevel());
       List<Prediction> topPredictions =
-          prediction.topPredictions().stream()
-              .map(item -> new Prediction(item.label(), item.disease(), item.probability()))
-              .toList();
+          prediction.topPredictions() == null
+              ? List.of()
+              : prediction.topPredictions().stream()
+                  .map(item -> new Prediction(item.label(), item.disease(), item.probability()))
+                  .toList();
       return new DiagnosisResult(
           status, prediction.crop(), cropCheck, topPredictions, supportLevel);
     } catch (IllegalArgumentException exception) {

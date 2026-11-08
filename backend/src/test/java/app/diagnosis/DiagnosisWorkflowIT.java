@@ -198,6 +198,88 @@ class DiagnosisWorkflowIT extends AbstractIntegrationTest {
     assertThat(photoCount()).isEqualTo(photoCountBefore);
   }
 
+  @Test
+  void savesCropNotSupportedResultAsAValidDiagnosis() throws Exception {
+    UUID ownerId = UUID.randomUUID();
+    Parcel parcel = savedParcel(ownerId);
+    when(aiServiceClient.predict(any(), eq("potato")))
+        .thenReturn(
+            new PredictionResponse(
+                "crop_not_supported", "potato", null, List.of(), "not_supported", "plant-v1"));
+
+    var creation =
+        mockMvc
+            .perform(
+                multipart("/diagnoses")
+                    .file(jpeg())
+                    .part(parcelPart(parcel.getId()))
+                    .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.status").value("crop_not_supported"))
+            .andExpect(jsonPath("$.cropCheck").doesNotExist())
+            .andExpect(jsonPath("$.supportLevel").value("not_supported"))
+            .andExpect(jsonPath("$.topPredictions").isEmpty())
+            .andReturn();
+
+    uploadedPhoto = savedPhotoPath(creation.getResponse().getContentAsString());
+  }
+
+  @Test
+  void savesResultWithNullCropAsAValidDiagnosis() throws Exception {
+    UUID ownerId = UUID.randomUUID();
+    Parcel parcel = savedParcel(ownerId);
+    when(aiServiceClient.predict(any(), eq("potato")))
+        .thenReturn(
+            new PredictionResponse(
+                "invalid_image", null, null, List.of(), "not_supported", "plant-v1"));
+
+    var creation =
+        mockMvc
+            .perform(
+                multipart("/diagnoses")
+                    .file(jpeg())
+                    .part(parcelPart(parcel.getId()))
+                    .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+            .andExpect(status().isCreated())
+            .andExpect(jsonPath("$.status").value("invalid_image"))
+            .andExpect(jsonPath("$.crop").doesNotExist())
+            .andExpect(jsonPath("$.topPredictions").isEmpty())
+            .andReturn();
+
+    uploadedPhoto = savedPhotoPath(creation.getResponse().getContentAsString());
+  }
+
+  @Test
+  void returns502WhenAiResponseIsIncomplete() throws Exception {
+    UUID ownerId = UUID.randomUUID();
+    Parcel parcel = savedParcel(ownerId);
+    when(aiServiceClient.predict(any(), eq("potato")))
+        .thenReturn(new PredictionResponse(null, "potato", "ok", List.of(), "lab_only", null));
+    mockMvc
+        .perform(
+            multipart("/diagnoses")
+                .file(jpeg())
+                .part(parcelPart(parcel.getId()))
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isBadGateway())
+        .andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(502))
+        .andExpect(jsonPath("$.title").value("Bad Gateway"));
+  }
+
+  @Test
+  void rejectsInvalidBearerTokenWithUnauthorizedNotServerError() throws Exception {
+    mockMvc
+        .perform(
+            multipart("/diagnoses")
+                .file(jpeg())
+                .part(parcelPart(UUID.randomUUID()))
+                .header("Authorization", "Bearer not.a.valid.token"))
+        .andExpect(status().isUnauthorized());
+
+    verifyNoInteractions(aiServiceClient);
+  }
+
   private Parcel savedParcel(UUID ownerId) {
     UserAccount owner =
         userRepository.save(
@@ -238,6 +320,17 @@ class DiagnosisWorkflowIT extends AbstractIntegrationTest {
         List.of(new Prediction("potato_early_blight", "early_blight", 0.92)),
         "lab_only",
         "plant-v1");
+  }
+
+  private Path savedPhotoPath(String creationResponseBody) throws Exception {
+    UUID diagnosisId =
+        UUID.fromString(
+            com.fasterxml.jackson.databind.json.JsonMapper.builder()
+                .build()
+                .readTree(creationResponseBody)
+                .get("id")
+                .asText());
+    return Path.of(diagnosisRepository.findById(diagnosisId).orElseThrow().getPhotoPath());
   }
 
   private long photoCount() throws Exception {

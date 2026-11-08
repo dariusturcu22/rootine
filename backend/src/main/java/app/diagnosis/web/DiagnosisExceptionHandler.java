@@ -46,6 +46,8 @@ public class DiagnosisExceptionHandler {
   }
 
   private static ProblemDetail problem(HttpStatus status, String detail) {
-    return ProblemDetail.forStatusAndDetail(status, detail);
+    ProblemDetail problemDetail = ProblemDetail.forStatusAndDetail(status, detail);
+    problemDetail.setTitle(status.getReasonPhrase());
+    return problemDetail;
   }
 }

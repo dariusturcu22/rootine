@@ -241,17 +241,17 @@ Errors:
 
 ### The diagnosis object
 
-| Field | Values and meaning |
-|---|---|
-| id | UUID, set by the backend |
-| parcelId | The parcel the photo belongs to |
-| status | `confident`, `unsure`, `invalid_image`, `crop_not_supported` |
-| crop | The crop used |
-| cropCheck | `ok`, `mismatch`, or `null` when no check was possible (`invalid_image`, `crop_not_supported`) |
+| Field | Values and meaning                                                                                                                            |
+|---|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| id | UUID, set by the backend                                                                                                                      |
+| parcelId | The parcel the photo belongs to                                                                                                               |
+| status | `confident`, `unsure`, `invalid_image`, `crop_not_supported`                                                                                  |
+| crop | The crop used, or `null` when the AI service could not determine one |                                                                        |                                                                          |
+| cropCheck | `ok`, `mismatch`, or `null` when no check was possible (`invalid_image`, `crop_not_supported`)                                                |
 | topPredictions | 3 items: `label` (`<crop>_<disease>`), `disease`, `probability` (0 to 1). Empty list when `status` is `invalid_image` or `crop_not_supported` |
-| supportLevel | `lab_and_field_tested`, `lab_only`, `not_supported` |
-| modelVersion | For example `plant-v1` |
-| createdAt | ISO 8601, in UTC, set by the backend |
+| supportLevel | `lab_and_field_tested`, `lab_only`, `not_supported`                                                                                           |
+| modelVersion | For example `plant-v1`                                                                                                                        |
+| createdAt | ISO 8601, in UTC, set by the backend                                                                                                          |
 
 The values of `status`, `cropCheck`, `topPredictions` and `supportLevel` are the same as in the AI service. Only the field names change, from snake_case to camelCase.
 
