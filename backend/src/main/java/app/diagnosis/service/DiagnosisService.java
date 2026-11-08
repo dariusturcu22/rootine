@@ -22,15 +22,20 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 /** Coordinates diagnosis uploads, AI predictions, and owner-scoped diagnosis reads. */
 @Service
 public class DiagnosisService {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(DiagnosisService.class);
   private static final long MAX_IMAGE_SIZE = 10L * 1024 * 1024;
   private static final byte[] PNG_SIGNATURE =
       new byte[] {(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
@@ -40,21 +45,31 @@ public class DiagnosisService {
   private final DiagnosisRepository diagnosisRepository;
   private final ParcelRepository parcelRepository;
   private final Path uploadDirectory;
+  private final TransactionTemplate readOnlyTransaction;
+  private final TransactionTemplate writeTransaction;
 
   public DiagnosisService(
       AiServiceClient aiServiceClient,
       DiagnosisMapper diagnosisMapper,
       DiagnosisRepository diagnosisRepository,
       ParcelRepository parcelRepository,
-      @Value("${app.upload-dir}") Path uploadDirectory) {
+      @Value("${app.upload-dir}") Path uploadDirectory,
+      PlatformTransactionManager transactionManager) {
     this.aiServiceClient = aiServiceClient;
     this.diagnosisMapper = diagnosisMapper;
     this.diagnosisRepository = diagnosisRepository;
     this.parcelRepository = parcelRepository;
     this.uploadDirectory = uploadDirectory;
+    this.readOnlyTransaction = new TransactionTemplate(transactionManager);
+    this.readOnlyTransaction.setReadOnly(true);
+    this.writeTransaction = new TransactionTemplate(transactionManager);
   }
 
-  @Transactional
+  /**
+   * Creates a diagnosis. The database work is wrapped in two short transactions (load the parcel,
+   * then save the diagnosis); the slow AI service call and the photo write happen between them with
+   * no transaction open, so a network call never holds a database connection and transaction.
+   */
   public DiagnosisResponse createDiagnosis(UUID ownerId, MultipartFile image, UUID parcelId) {
     if (image == null || parcelId == null) {
       throw new InvalidDiagnosisUploadException("Both image and parcelId are required.");
@@ -65,12 +80,30 @@ public class DiagnosisService {
     }
 
     byte[] imageBytes = readAndValidateImage(image);
-    Parcel parcel =
-        parcelRepository
-            .findByIdAndOwnerId(parcelId, ownerId)
-            .orElseThrow(() -> new DiagnosisNotFoundException("The parcel was not found."));
 
-    PredictionResponse prediction = aiServiceClient.predict(image, parcel.getCrop());
+    // Transaction 1 (read-only): load and ownership-check the parcel, then commit.
+    Parcel parcel =
+        readOnlyTransaction.execute(
+            status ->
+                parcelRepository
+                    .findByIdAndOwnerId(parcelId, ownerId)
+                    .orElseThrow(
+                        () -> new DiagnosisNotFoundException("The parcel was not found.")));
+    String crop = parcel.getCrop();
+
+    // No transaction open: call the AI service and write the photo to disk.
+    PredictionResponse prediction;
+    try {
+      prediction = aiServiceClient.predict(image, crop);
+    } catch (AiServiceException exception) {
+      LOGGER.warn(
+          "AI prediction failed for parcel {} (crop {}): {}",
+          parcelId,
+          crop,
+          exception.getMessage());
+      throw exception;
+    }
+
     DiagnosisResult result = toDiagnosisResult(prediction);
 
     String extension = hasPngSignature(imageBytes) ? ".png" : ".jpg";
@@ -90,8 +123,18 @@ public class DiagnosisService {
             result,
             prediction.modelVersion(),
             Instant.now());
+
+    // Transaction 2: persist the finished diagnosis.
     try {
-      return diagnosisMapper.toResponse(diagnosisRepository.save(diagnosis));
+      DiagnosisResponse response =
+          writeTransaction.execute(
+              status -> diagnosisMapper.toResponse(diagnosisRepository.save(diagnosis)));
+      LOGGER.info(
+          "Saved diagnosis {} for parcel {} with status {}",
+          response.id(),
+          parcelId,
+          result.status());
+      return response;
     } catch (RuntimeException exception) {
       try {
         Files.deleteIfExists(photoPath);
