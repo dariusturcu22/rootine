@@ -16,14 +16,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        models_dir = settings.models_dir
-        model_version_dir = settings.model_version_dir
+        model_dir = settings.model_dir
         app.state.settings = settings
-        app.state.labels = load_labels(models_dir / "labels.csv")
-        app.state.crops = load_crops(models_dir / "crops.json")
-        app.state.metadata = load_metadata(model_version_dir / "metadata.json")
+        app.state.labels = load_labels(model_dir / "labels.csv")
+        app.state.crops = load_crops(model_dir / "crops.json")
+        app.state.metadata = load_metadata(model_dir / "metadata.json")
 
-        model_path = model_version_dir / app.state.metadata["model_file"]
+        model_path = model_dir / app.state.metadata["model_file"]
         app.state.mock = settings.ai_mock or not model_path.exists()
         app.state.classifier = (
             None if app.state.mock else Classifier(model_path, app.state.metadata)

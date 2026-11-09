@@ -7,8 +7,7 @@ class Settings(BaseSettings):
     """Settings read from environment variables (AI_MOCK, MODEL_DIR, ...)."""
 
     ai_mock: bool = False
-    models_dir: Path = Path("models")
-    model_version_dir: Path = Path("models/plant-v1")
+    model_dir: Path = Path("models/plant-v1")
     open_meteo_url: str = "https://api.open-meteo.com/v1/forecast"
     open_meteo_archive_url: str = "https://archive-api.open-meteo.com/v1/archive"
     cache_ttl: int = 3600
