@@ -18,7 +18,12 @@ import app.diagnosis.service.DiagnosisService;
 import app.parcel.dto.ParcelRequest;
 import app.parcel.dto.ParcelResponse;
 import app.parcel.dto.PolygonGeometry;
+import app.parcel.service.ParcelNotFoundException;
 import app.parcel.service.ParcelService;
+import app.risk.dto.DiseaseRisk;
+import app.risk.dto.RiskLevel;
+import app.risk.dto.RiskResponse;
+import app.risk.service.RiskService;
 import app.user.dto.LoginResponse;
 import app.user.service.DemoTokenService;
 import java.time.Instant;
@@ -84,6 +89,7 @@ class ContractEndpointsTest {
   @MockitoBean private DiagnosisService diagnosisService;
   @MockitoBean private AiServiceClient aiServiceClient;
   @MockitoBean private ParcelService parcelService;
+  @MockitoBean private RiskService riskService;
   @MockitoBean private DemoTokenService demoTokenService;
 
   @Test
@@ -128,6 +134,61 @@ class ContractEndpointsTest {
 
     mockMvc
         .perform(get("/crops").with(jwt()))
+        .andExpect(status().isBadGateway())
+        .andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(502));
+  }
+
+  @Test
+  void parcelRiskEndpointReturnsTheLiveRiskForTheAuthenticatedOwner() throws Exception {
+    UUID ownerId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    UUID parcelId = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
+    given(riskService.getParcelRisk(ownerId, parcelId))
+        .willReturn(
+            new RiskResponse(
+                parcelId,
+                "potato",
+                RiskLevel.MEDIUM,
+                42,
+                "Mock risk",
+                List.of(new DiseaseRisk("late_blight", "hutton", RiskLevel.MEDIUM, 42)),
+                Instant.parse("2026-11-09T10:00:00Z")));
+
+    mockMvc
+        .perform(
+            get("/parcels/{id}/risk", parcelId)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.parcelId").value(parcelId.toString()))
+        .andExpect(jsonPath("$.level").value("medium"))
+        .andExpect(jsonPath("$.diseases[0].riskIndex").value(42));
+  }
+
+  @Test
+  void parcelRiskEndpointHidesUnknownOrNonOwnedParcels() throws Exception {
+    UUID ownerId = UUID.randomUUID();
+    UUID parcelId = UUID.randomUUID();
+    given(riskService.getParcelRisk(ownerId, parcelId)).willThrow(new ParcelNotFoundException());
+
+    mockMvc
+        .perform(
+            get("/parcels/{id}/risk", parcelId)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.status").value(404));
+  }
+
+  @Test
+  void parcelRiskEndpointMapsAiFailuresTo502ProblemDetails() throws Exception {
+    UUID ownerId = UUID.randomUUID();
+    UUID parcelId = UUID.randomUUID();
+    given(riskService.getParcelRisk(ownerId, parcelId))
+        .willThrow(new AiServiceException("unavailable"));
+
+    mockMvc
+        .perform(
+            get("/parcels/{id}/risk", parcelId)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
         .andExpect(status().isBadGateway())
         .andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
         .andExpect(jsonPath("$.status").value(502));
