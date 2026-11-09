@@ -17,6 +17,7 @@ import app.diagnosis.dto.DiagnosisStatus;
 import app.diagnosis.dto.Prediction;
 import app.diagnosis.service.DiagnosisService;
 import app.parcel.service.ParcelService;
+import app.risk.service.RiskService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -54,6 +55,7 @@ class DiagnosisControllerTest {
   @Autowired private MockMvc mockMvc;
   @MockitoBean private DiagnosisService diagnosisService;
   @MockitoBean private ParcelService parcelService;
+  @MockitoBean private RiskService riskService;
 
   @Test
   void postsMultipartImageAndParcelId() throws Exception {

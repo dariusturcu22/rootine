@@ -241,17 +241,17 @@ Errors:
 
 ### The diagnosis object
 
-| Field | Values and meaning |
-|---|---|
-| id | UUID, set by the backend |
-| parcelId | The parcel the photo belongs to |
-| status | `confident`, `unsure`, `invalid_image`, `crop_not_supported` |
-| crop | The crop used |
-| cropCheck | `ok`, `mismatch`, or `null` when no check was possible (`invalid_image`, `crop_not_supported`) |
+| Field | Values and meaning                                                                                                                            |
+|---|-----------------------------------------------------------------------------------------------------------------------------------------------|
+| id | UUID, set by the backend                                                                                                                      |
+| parcelId | The parcel the photo belongs to                                                                                                               |
+| status | `confident`, `unsure`, `invalid_image`, `crop_not_supported`                                                                                  |
+| crop | The crop used, or `null` when the AI service could not determine one |                                                                        |                                                                          |
+| cropCheck | `ok`, `mismatch`, or `null` when no check was possible (`invalid_image`, `crop_not_supported`)                                                |
 | topPredictions | 3 items: `label` (`<crop>_<disease>`), `disease`, `probability` (0 to 1). Empty list when `status` is `invalid_image` or `crop_not_supported` |
-| supportLevel | `lab_and_field_tested`, `lab_only`, `not_supported` |
-| modelVersion | For example `plant-v1` |
-| createdAt | ISO 8601, in UTC, set by the backend |
+| supportLevel | `lab_and_field_tested`, `lab_only`, `not_supported`                                                                                           |
+| modelVersion | For example `plant-v1`                                                                                                                        |
+| createdAt | ISO 8601, in UTC, set by the backend                                                                                                          |
 
 The values of `status`, `cropCheck`, `topPredictions` and `supportLevel` are the same as in the AI service. Only the field names change, from snake_case to camelCase.
 
@@ -297,11 +297,16 @@ Demo 1 has no endpoint to change or delete a diagnosis. Diagnoses are deleted to
 
 ## Risk and heatmap
 
-The backend stores the latest risk result returned by the AI service (`POST /v1/risk`) for each parcel. A daily job refreshes these results. The backend does not compute weather risk itself.
+The backend does not compute weather risk itself. The single-parcel endpoint calls the AI service
+(`POST /v1/risk`) live using the parcel's centre location and crop. The daily job and heatmap use
+stored results separately.
 
 ### GET /parcels/{id}/risk
 
-Returns the latest stored risk result for the parcel.
+Returns a live risk result for an owned parcel. The backend loads the parcel by both `{id}` and the
+authenticated user's ID, then sends its centre latitude, centre longitude and crop to the AI
+service. The response is mapped from the AI service's snake_case fields to the backend's camelCase
+fields.
 
 Response 200:
 
@@ -324,7 +329,8 @@ For a crop without a weather model, `level` is `not_modelled`, `riskIndex` is 0 
 Errors:
 
 - 401 for a missing, invalid or expired token.
-- 404 if the parcel does not exist, belongs to another user, or has no stored risk result yet.
+- 404 if the parcel does not exist or belongs to another user. Both cases give the same answer.
+- 502 if the AI service is unavailable or returns an error. No risk result is stored by this call.
 
 ### GET /risk/heatmap
 
