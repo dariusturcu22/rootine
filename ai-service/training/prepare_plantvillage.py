@@ -12,7 +12,7 @@ REPO = "mohanty/PlantVillage"
 REVISION = None
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "training" / "datasets"
-LABELS = ROOT / "models" / "plant-v1" / "labels.csv"
+LABELS = ROOT / "models" / "labels.csv"
 SEED = 42
 MAX_HAMMING = 3
 logging.basicConfig(level=logging.INFO, format="%(message)s")
