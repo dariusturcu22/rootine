@@ -1,5 +1,5 @@
 import { http, HttpResponse, type RequestHandler } from 'msw'
-import type { Crop, Diagnosis, Parcel, ParcelInput } from '../../lib/apiClient'
+import type { Crop, Diagnosis, Parcel, ParcelInput, ParcelRisk } from '../../lib/apiClient'
 
 const parcels: Parcel[] = [
   {
@@ -65,6 +65,27 @@ const crops: Crop[] = [
   },
 ]
 
+const parcelRisks: ParcelRisk[] = [
+  {
+    parcelId: '3b241101-e2bb-4255-8caf-4136c566a962',
+    crop: 'potato',
+    level: 'medium',
+    riskIndex: 42,
+    reason: 'Mock response: fixed medium risk, real weather rules are not implemented yet.',
+    diseases: [{ disease: 'late_blight', model: 'hutton', level: 'medium', riskIndex: 42 }],
+    generatedAt: '2026-11-01T06:00:00Z',
+  },
+  {
+    parcelId: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+    crop: 'tomato',
+    level: 'not_modelled',
+    riskIndex: 0,
+    reason: 'No weather model is available for this crop.',
+    diseases: [],
+    generatedAt: '2026-11-01T06:00:00Z',
+  },
+]
+
 function isValidGeometry(geometry: ParcelInput['geometry']): boolean {
   const ring = geometry?.coordinates?.[0]
   if (!ring || ring.length < 4) return false
@@ -92,6 +113,10 @@ export const handlers: RequestHandler[] = [
     HttpResponse.json({ accessToken: 'demo-access-token', tokenType: 'Bearer', expiresIn: 3600 }),
   ),
   http.get('*/api/crops', () => HttpResponse.json(crops)),
+  http.get('*/api/parcels/:id/risk', ({ params }) => {
+    const risk = parcelRisks.find(({ parcelId }) => parcelId === params.id)
+    return risk ? HttpResponse.json(risk) : problem(404, 'Not Found', 'Risk not found.')
+  }),
 
   http.post('*/api/diagnoses', async ({ request }) => {
     const formData = await request.formData()

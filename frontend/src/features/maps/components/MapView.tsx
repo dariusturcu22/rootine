@@ -3,11 +3,21 @@ import 'leaflet-draw/dist/leaflet.draw.css'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { DrawEvents, LatLng, Polygon as LeafletPolygon, Layer } from 'leaflet'
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { FeatureGroup, MapContainer, Polygon, TileLayer } from 'react-leaflet'
+import {
+  FeatureGroup,
+  MapContainer,
+  Polygon,
+  Popup,
+  TileLayer,
+  Tooltip,
+  useMapEvents,
+} from 'react-leaflet'
 import { EditControl } from 'react-leaflet-draw'
+import { Link } from 'react-router'
 import { MAP_CENTER, MAP_ZOOM } from '../../../config/env'
 import {
   createParcel,
+  deleteParcel,
   getCrops,
   getParcels,
   updateParcel,
@@ -15,8 +25,17 @@ import {
   type Position,
   type ParcelInput,
 } from '../../../lib/apiClient'
+import './MapView.css'
 
 type ParcelLayer = LeafletPolygon & { parcelId?: string }
+
+function ParcelZoomListener({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
+  useMapEvents({
+    zoomend: (event) => onZoomChange(event.target.getZoom()),
+  })
+
+  return null
+}
 
 function orientation(a: Position, b: Position, c: Position): number {
   return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
@@ -123,6 +142,12 @@ export function MapView() {
   const [geometry, setGeometry] = useState<ParcelGeometry | null>(null)
   const [drawError, setDrawError] = useState<string | null>(null)
   const [editControlVersion, setEditControlVersion] = useState(0)
+  const [mapZoom, setMapZoom] = useState(MAP_ZOOM)
+  const [deleteMode, setDeleteMode] = useState(false)
+  const [selectedParcelId, setSelectedParcelId] = useState<string | null>(null)
+  const [selectedParcelPosition, setSelectedParcelPosition] = useState<[number, number] | null>(
+    null,
+  )
   const temporaryLayer = useRef<Layer | null>(null)
 
   const { data: parcels = [], isError: parcelsError } = useQuery({
@@ -175,6 +200,16 @@ export function MapView() {
       setDrawError('Unable to update parcel. Please try again.')
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
+    },
+  })
+
+  const deleteParcelMutation = useMutation({
+    mutationFn: deleteParcel,
+    onSuccess: async () => {
+      setSelectedParcelId(null)
+      setSelectedParcelPosition(null)
+      setDeleteMode(false)
+      await queryClient.invalidateQueries({ queryKey: ['parcels'] })
     },
   })
 
@@ -260,7 +295,7 @@ export function MapView() {
       }
 
       setDrawError(null)
-      parcelLayer.setStyle({ color: '#f97316', fillColor: '#f97316', fillOpacity: 0.35 })
+      parcelLayer.setStyle({ color: '#2E7D32', fillColor: '#C5E1A5', fillOpacity: 0.55 })
       updateParcelMutationRef.current.mutate({
         id: parcel.id,
         parcel: {
@@ -273,120 +308,240 @@ export function MapView() {
   }, [])
 
   return (
-    <section
-      aria-label="Map of Romania"
-      style={{
-        position: 'relative',
-        height: '100%',
-        width: '100%',
-        minHeight: '400px',
-      }}
-    >
-      <MapContainer
-        center={MAP_CENTER}
-        zoom={MAP_ZOOM}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          height: '100%',
-          width: '100%',
-        }}
-      >
-        <TileLayer
-          attribution="Tiles &copy; Esri"
-          url="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          maxZoom={19}
-        />
+    <section className="map-page" aria-label="Map of Romania">
+      <header className="page-heading map-heading">
+        <div>
+          <p className="eyebrow">YOUR FARM</p>
+          <h1>Field map</h1>
+          <p className="page-description">View your parcels and draw a boundary to add a field.</p>
+        </div>
+        <span className="parcel-count">
+          {parcels.length} {parcels.length === 1 ? 'parcel' : 'parcels'}
+        </span>
+      </header>
 
-        <TileLayer
-          url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-          maxZoom={19}
-        />
+      <div className="map-frame">
+        <MapContainer center={MAP_CENTER} zoom={MAP_ZOOM} className="rootine-leaflet-map">
+          <ParcelZoomListener onZoomChange={setMapZoom} />
+          <TileLayer
+            attribution="Tiles &copy; Esri"
+            url="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={19}
+          />
 
-        <FeatureGroup key={editControlVersion}>
-          {parcels.map((parcel) => (
-            <Polygon
-              key={parcel.id}
-              ref={(layer) => registerParcelLayer(parcel.id, layer)}
-              positions={parcel.geometry.coordinates[0].map(([longitude, latitude]) => [
-                latitude,
-                longitude,
-              ])}
-              pathOptions={{
-                color: '#f97316',
-                fillColor: '#f97316',
-                fillOpacity: 0.35,
+          <TileLayer
+            url="https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+            maxZoom={19}
+          />
+
+          <FeatureGroup key={editControlVersion}>
+            {parcels.map((parcel) => (
+              <Polygon
+                key={parcel.id}
+                ref={(layer) => registerParcelLayer(parcel.id, layer)}
+                eventHandlers={{
+                  click: (event) => {
+                    setSelectedParcelId(parcel.id)
+                    setSelectedParcelPosition([event.latlng.lat, event.latlng.lng])
+                  },
+                }}
+                positions={parcel.geometry.coordinates[0].map(([longitude, latitude]) => [
+                  latitude,
+                  longitude,
+                ])}
+                pathOptions={{
+                  color: '#2E7D32',
+                  fillColor: '#C5E1A5',
+                  fillOpacity: 0.55,
+                }}
+              >
+                {mapZoom >= 9 && (
+                  <Tooltip permanent direction="center" className="parcel-name-label">
+                    {parcel.name}
+                  </Tooltip>
+                )}
+              </Polygon>
+            ))}
+
+            <EditControl
+              position="topright"
+              onCreated={handlePolygonCreated}
+              onEdited={handleParcelsEdited}
+              edit={{ remove: false }}
+              draw={{
+                polygon: true,
+                rectangle: false,
+                circle: false,
+                marker: false,
+                polyline: false,
+                circlemarker: false,
               }}
             />
-          ))}
+          </FeatureGroup>
+          {selectedParcelId && selectedParcelPosition && (
+            <Popup
+              position={selectedParcelPosition}
+              className="parcel-popup"
+              eventHandlers={{
+                remove: () => {
+                  setSelectedParcelId(null)
+                  setSelectedParcelPosition(null)
+                },
+              }}
+            >
+              {(() => {
+                const selectedParcel = parcels.find(({ id }) => id === selectedParcelId)
+                if (!selectedParcel) return null
 
-          <EditControl
-            position="topright"
-            onCreated={handlePolygonCreated}
-            onEdited={handleParcelsEdited}
-            draw={{
-              polygon: true,
-              rectangle: false,
-              circle: false,
-              marker: false,
-              polyline: false,
-              circlemarker: false,
-            }}
-          />
-        </FeatureGroup>
-      </MapContainer>
+                return (
+                  <div className="parcel-card">
+                    <span className="eyebrow">FIELD DETAILS</span>
+                    <h2>{selectedParcel.name}</h2>
+                    {deleteMode ? (
+                      <>
+                        <p className="parcel-delete-question">
+                          Are you sure you want to delete this parcel?
+                        </p>
+                        <div className="parcel-delete-actions">
+                          <button
+                            className="parcel-cancel-delete"
+                            type="button"
+                            onClick={() => {
+                              setSelectedParcelId(null)
+                              setSelectedParcelPosition(null)
+                              setDeleteMode(false)
+                              deleteParcelMutation.reset()
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            className="parcel-confirm-delete"
+                            type="button"
+                            disabled={deleteParcelMutation.isPending}
+                            onClick={() => deleteParcelMutation.mutate(selectedParcel.id)}
+                          >
+                            {deleteParcelMutation.isPending ? 'Deleting...' : 'Delete parcel'}
+                          </button>
+                        </div>
+                        {deleteParcelMutation.isError && (
+                          <p className="feedback-message feedback-error" role="alert">
+                            Unable to delete parcel. Please try again.
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="parcel-crop">
+                          Crop <strong>{selectedParcel.crop}</strong>
+                        </p>
+                        <Link
+                          className="parcel-diagnosis-link"
+                          to={`/diagnosis?parcelId=${encodeURIComponent(selectedParcel.id)}`}
+                        >
+                          Diagnose a leaf
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                )
+              })()}
+            </Popup>
+          )}
+        </MapContainer>
 
-      {geometry && !cropsError && (
-        <form
-          onSubmit={(event) => {
-            event.preventDefault()
-            const formData = new FormData(event.currentTarget)
-
-            createParcelMutation.mutate({
-              name: String(formData.get('name') ?? '').trim(),
-              crop: String(formData.get('crop') ?? ''),
-              geometry,
-            })
-          }}
-          style={{
-            position: 'absolute',
-            zIndex: 1000,
-            top: '1rem',
-            left: '1rem',
-            padding: '1rem',
-            background: 'white',
+        <button
+          className={`delete-mode-toggle${deleteMode ? ' delete-mode-active' : ''}`}
+          type="button"
+          title={deleteMode ? 'Exit parcel deletion mode' : 'Delete a parcel'}
+          aria-label={deleteMode ? 'Exit parcel deletion mode' : 'Delete parcel mode'}
+          aria-pressed={deleteMode}
+          onClick={() => {
+            setDeleteMode((active) => !active)
+            setSelectedParcelId(null)
+            setSelectedParcelPosition(null)
+            deleteParcelMutation.reset()
           }}
         >
-          <label>
-            Parcel name
-            <input name="name" required maxLength={100} />
-          </label>
+          {deleteMode ? (
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          ) : (
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 3v6m4-6v6" />
+            </svg>
+          )}
+        </button>
 
-          <label>
-            Crop
-            <select name="crop" required>
-              <option value="">Select a crop</option>
-              {crops.map((crop) => (
-                <option key={crop.crop} value={crop.crop}>
-                  {crop.crop}
-                </option>
-              ))}
-            </select>
-          </label>
+        {geometry && !cropsError && (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault()
+              const formData = new FormData(event.currentTarget)
 
-          <button type="submit" disabled={createParcelMutation.isPending}>
-            {createParcelMutation.isPending ? 'Saving...' : 'Save parcel'}
-          </button>
-        </form>
+              createParcelMutation.mutate({
+                name: String(formData.get('name') ?? '').trim(),
+                crop: String(formData.get('crop') ?? ''),
+                geometry,
+              })
+            }}
+            className="parcel-form"
+          >
+            <div className="form-heading">
+              <span className="eyebrow">NEW FIELD</span>
+              <h2>Add a parcel</h2>
+              <p>Give your field a name and choose what you grow.</p>
+            </div>
+            <label>
+              Parcel name
+              <input name="name" required maxLength={100} />
+            </label>
+
+            <label>
+              Crop
+              <select name="crop" required>
+                <option value="">Select a crop</option>
+                {crops.map((crop) => (
+                  <option key={crop.crop} value={crop.crop}>
+                    {crop.crop}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="form-actions">
+              <button type="submit" disabled={createParcelMutation.isPending}>
+                {createParcelMutation.isPending ? 'Saving...' : 'Save parcel'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {drawError && (
+        <p className="feedback-message feedback-error" role="alert">
+          {drawError}
+        </p>
       )}
 
-      {drawError && <p role="alert">{drawError}</p>}
+      {parcelsError && (
+        <p className="feedback-message feedback-error" role="alert">
+          Unable to load parcels. Please try again.
+        </p>
+      )}
 
-      {parcelsError && <p role="alert">Unable to load parcels. Please try again.</p>}
+      {cropsError && (
+        <p className="feedback-message feedback-error" role="alert">
+          Unable to load crops. Please try again.
+        </p>
+      )}
 
-      {cropsError && <p role="alert">Unable to load crops. Please try again.</p>}
-
-      {createParcelMutation.isError && <p role="alert">Unable to save parcel. Please try again.</p>}
+      {createParcelMutation.isError && (
+        <p className="feedback-message feedback-error" role="alert">
+          Unable to save parcel. Please try again.
+        </p>
+      )}
     </section>
   )
 }

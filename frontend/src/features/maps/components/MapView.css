@@ -1,0 +1,432 @@
+.map-page {
+  display: flex;
+  min-height: min(760px, calc(100vh - 60px));
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.page-heading h1 {
+  margin: 2px 0 4px;
+  color: var(--color-green);
+  font-size: clamp(1.7rem, 3vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--color-bark);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.page-description {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.96rem;
+}
+
+.parcel-count {
+  flex: none;
+  padding: 9px 14px;
+  border: 1px solid rgb(46 125 50 / 14%);
+  border-radius: 999px;
+  background: rgb(197 225 165 / 38%);
+  color: var(--color-green);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.map-frame {
+  position: relative;
+  flex: 1;
+  min-height: 430px;
+  overflow: hidden;
+  border: 1px solid rgb(141 110 99 / 13%);
+  border-radius: 22px;
+  background: var(--color-map);
+  box-shadow: 0 14px 36px rgb(61 73 53 / 9%);
+}
+
+.rootine-leaflet-map {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-map);
+  font-family: var(--font-body);
+}
+
+.parcel-form {
+  position: absolute;
+  z-index: 1000;
+  top: 18px;
+  left: 18px;
+  display: grid;
+  width: min(330px, calc(100% - 36px));
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgb(141 110 99 / 13%);
+  border-radius: 18px;
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgb(36 49 34 / 16%);
+}
+
+.form-heading h2 {
+  margin: 4px 0;
+  color: var(--color-ink);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.form-heading p {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.parcel-form label,
+.diagnosis-field {
+  display: grid;
+  gap: 7px;
+  color: var(--color-ink);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.parcel-form input,
+.parcel-form select,
+.diagnosis-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--color-ink);
+  font: inherit;
+  font-weight: 500;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.parcel-form button,
+.diagnosis-submit {
+  min-height: 44px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--color-green);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.parcel-form button:hover:not(:disabled),
+.diagnosis-submit:hover:not(:disabled) {
+  background: var(--color-green-dark);
+  box-shadow: 0 5px 14px rgb(46 125 50 / 22%);
+  transform: translateY(-1px);
+}
+
+.parcel-form button:disabled,
+.diagnosis-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.feedback-message {
+  margin: 0;
+  padding: 12px 15px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.feedback-error {
+  border: 1px solid #e8c3bc;
+  background: #fff3f0;
+  color: #8d3022;
+}
+
+.rootine-leaflet-map .leaflet-control-zoom a {
+  color: var(--color-green);
+}
+
+.rootine-leaflet-map .parcel-name-label {
+  max-width: 180px;
+  overflow: hidden;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: rgb(255 255 255 / 76%);
+  box-shadow: 0 2px 8px rgb(36 49 34 / 17%);
+  color: #23332a;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 800;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rootine-leaflet-map .parcel-name-label::before {
+  display: none;
+}
+
+.rootine-leaflet-map .parcel-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  border: 1px solid rgb(141 110 99 / 12%);
+  border-radius: 18px;
+  box-shadow: 0 14px 36px rgb(25 38 27 / 24%);
+}
+
+.rootine-leaflet-map .parcel-popup .leaflet-popup-content {
+  width: 240px !important;
+  max-width: calc(100vw - 80px);
+  margin: 0;
+  font-family: var(--font-body);
+}
+
+.parcel-card {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+.parcel-card h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 1.28rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.parcel-crop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 2px 0 4px;
+  padding: 12px 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.94rem;
+}
+
+.parcel-crop strong {
+  color: var(--color-ink);
+  text-transform: capitalize;
+}
+
+.parcel-diagnosis-link {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 11px;
+  background: var(--color-green);
+  color: #fff !important;
+  font-size: 0.94rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.parcel-diagnosis-link:hover {
+  background: var(--color-green-dark);
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.parcel-delete-question {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.parcel-delete-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 9px;
+}
+
+.parcel-delete-actions button,
+.delete-mode-toggle {
+  min-height: 42px;
+  padding: 9px 13px;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.parcel-cancel-delete {
+  background: var(--color-page);
+  color: var(--color-ink);
+}
+
+.parcel-cancel-delete:hover {
+  background: var(--color-border);
+}
+
+.parcel-confirm-delete {
+  background: #a63e32;
+  color: #fff;
+}
+
+.parcel-confirm-delete:hover:not(:disabled) {
+  background: #862f26;
+  transform: translateY(-1px);
+}
+
+.parcel-confirm-delete:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.delete-mode-toggle {
+  position: absolute;
+  z-index: 1000;
+  display: grid;
+  top: 122px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(141 110 99 / 18%);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: #a63e32;
+  box-shadow: 0 3px 12px rgb(36 49 34 / 12%);
+}
+
+.delete-mode-toggle:hover {
+  background: #fff3f0;
+  transform: translateY(-1px);
+}
+
+.delete-mode-toggle.delete-mode-active {
+  background: #a63e32;
+  color: #fff;
+}
+
+.delete-mode-toggle svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.rootine-leaflet-map .leaflet-draw-toolbar a {
+  width: 34px;
+  height: 34px;
+  background-color: var(--color-surface);
+}
+
+.rootine-leaflet-map .leaflet-draw-toolbar a:hover {
+  background-color: #f2f7ef;
+}
+
+.rootine-leaflet-map .leaflet-draw-toolbar {
+  overflow: hidden;
+  border: 1px solid rgb(141 110 99 / 18%);
+  border-radius: 10px;
+  box-shadow: 0 3px 12px rgb(36 49 34 / 12%);
+}
+
+.rootine-leaflet-map .leaflet-bar,
+.rootine-leaflet-map .leaflet-control-layers {
+  overflow: hidden;
+  border: 1px solid rgb(141 110 99 / 18%);
+  border-radius: 10px;
+  box-shadow: 0 3px 12px rgb(36 49 34 / 12%);
+}
+
+@media (max-width: 500px) {
+  .rootine-leaflet-map .parcel-name-label {
+    font-size: 0.75rem;
+  }
+
+  .rootine-leaflet-map .parcel-popup .leaflet-popup-content {
+    width: 220px !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .map-page {
+    min-height: calc(100vh - 150px);
+    gap: 16px;
+  }
+
+  .map-heading {
+    align-items: flex-start;
+  }
+
+  .page-description {
+    max-width: 34ch;
+    font-size: 0.9rem;
+  }
+
+  .map-frame {
+    min-height: 420px;
+    border-radius: 16px;
+  }
+
+  .parcel-form {
+    top: 12px;
+    left: 12px;
+    width: min(300px, calc(100% - 24px));
+    padding: 17px;
+  }
+
+  .delete-mode-toggle {
+    top: 122px;
+    right: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parcel-form button,
+  .parcel-delete-actions button,
+  .parcel-diagnosis-link,
+  .delete-mode-toggle,
+  .diagnosis-submit {
+    transition: none;
+  }
+}
