@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { createDiagnosis, type Diagnosis } from '../api/diagnosisApi'
+import type { Diagnosis } from '../api/diagnosisApi'
+import { useCreateDiagnosis } from '../api/hooks'
 import './ImageUpload.css'
 
 type ViewTransitionDocument = Document & {
@@ -18,8 +19,8 @@ export function ImageUpload({ parcelId, parcelName, onResultChange }: ImageUploa
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const diagnosisMutation = useCreateDiagnosis()
 
   function showDiagnosis(result: Diagnosis) {
     const update = () =>
@@ -99,16 +100,13 @@ export function ImageUpload({ parcelId, parcelName, onResultChange }: ImageUploa
       return
     }
 
-    setIsSubmitting(true)
     setError(null)
 
     try {
-      const result = await createDiagnosis(file, parcelId)
+      const result = await diagnosisMutation.mutateAsync({ image: file, parcelId })
       showDiagnosis(result)
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Unable to submit the image.')
-    } finally {
-      setIsSubmitting(false)
     }
   }
 
@@ -149,8 +147,12 @@ export function ImageUpload({ parcelId, parcelName, onResultChange }: ImageUploa
               </div>
             )}
 
-            <button className="diagnosis-submit" type="submit" disabled={!file || isSubmitting}>
-              {isSubmitting ? 'Checking your photo...' : 'Submit for diagnosis'}
+            <button
+              className="diagnosis-submit"
+              type="submit"
+              disabled={!file || diagnosisMutation.isPending}
+            >
+              {diagnosisMutation.isPending ? 'Checking your photo...' : 'Submit for diagnosis'}
             </button>
           </form>
 
