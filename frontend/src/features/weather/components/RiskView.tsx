@@ -1,10 +1,10 @@
-import { useQueries, useQuery } from '@tanstack/react-query'
 import type { UseQueryResult } from '@tanstack/react-query'
 import { useState } from 'react'
 import { MapContainer, Polygon, Popup, TileLayer, Tooltip, useMapEvents } from 'react-leaflet'
 import { MAP_CENTER, MAP_ZOOM } from '../../../config/env'
-import { ApiError, getParcelRisk, getParcels } from '../../../lib/apiClient'
+import { ApiError } from '../../../lib/apiClient'
 import type { Parcel, ParcelRisk, RiskLevel } from '../../../lib/apiClient'
+import { useParcelRisks, useRiskParcels } from '../api/hooks'
 import './RiskView.css'
 
 const riskLabels: Record<RiskLevel, string> = {
@@ -53,19 +53,10 @@ export function RiskView() {
     position: [number, number]
   } | null>(null)
 
-  const parcelsQuery = useQuery({
-    queryKey: ['parcels'],
-    queryFn: getParcels,
-  })
+  const parcelsQuery = useRiskParcels()
   const parcels = parcelsQuery.data ?? []
 
-  const riskQueries = useQueries({
-    queries: parcels.map((parcel) => ({
-      queryKey: ['parcels', parcel.id, 'risk'],
-      queryFn: () => getParcelRisk(parcel.id),
-      retry: false,
-    })),
-  })
+  const riskQueries = useParcelRisks(parcels.map((parcel) => parcel.id))
 
   if (parcelsQuery.isPending) {
     return (

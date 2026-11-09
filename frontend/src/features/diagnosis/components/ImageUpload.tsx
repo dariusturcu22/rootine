@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
-import { createDiagnosis, type Diagnosis } from '../../../lib/apiClient'
+import { createDiagnosis, type Diagnosis } from '../api/diagnosisApi'
 import './ImageUpload.css'
 
 type ViewTransitionDocument = Document & {
