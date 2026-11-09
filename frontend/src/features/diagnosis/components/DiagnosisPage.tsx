@@ -1,6 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
-import { getParcels } from '../../../lib/apiClient'
+import { useParcels } from '../../maps/api/hooks'
 import { ImageUpload } from './ImageUpload'
 import './DiagnosisPage.css'
 
@@ -13,10 +12,7 @@ export function DiagnosisPage() {
     data: parcels = [],
     isPending,
     isError,
-  } = useQuery({
-    queryKey: ['parcels'],
-    queryFn: getParcels,
-  })
+  } = useParcels()
 
   if (isPending) {
     return (

@@ -1,6 +1,5 @@
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import type { DrawEvents, LatLng, Polygon as LeafletPolygon, Layer } from 'leaflet'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
@@ -15,16 +14,15 @@ import {
 import { EditControl } from 'react-leaflet-draw'
 import { Link } from 'react-router'
 import { MAP_CENTER, MAP_ZOOM } from '../../../config/env'
+import { type ParcelGeometry, type Position } from '../../../lib/apiClient'
 import {
-  createParcel,
-  deleteParcel,
-  getCrops,
-  getParcels,
-  updateParcel,
-  type ParcelGeometry,
-  type Position,
-  type ParcelInput,
-} from '../../../lib/apiClient'
+  useCreateParcel,
+  useCrops,
+  useDeleteParcel,
+  useParcelQueryClient,
+  useParcels,
+  useUpdateParcel,
+} from '../api/hooks'
 import './MapView.css'
 
 type ParcelLayer = LeafletPolygon & { parcelId?: string }
@@ -138,7 +136,7 @@ function polygonsOverlap(firstRing: Position[], secondRing: Position[]): boolean
 }
 
 export function MapView() {
-  const queryClient = useQueryClient()
+  const queryClient = useParcelQueryClient()
   const [geometry, setGeometry] = useState<ParcelGeometry | null>(null)
   const [drawError, setDrawError] = useState<string | null>(null)
   const [editControlVersion, setEditControlVersion] = useState(0)
@@ -150,15 +148,9 @@ export function MapView() {
   )
   const temporaryLayer = useRef<Layer | null>(null)
 
-  const { data: parcels = [], isError: parcelsError } = useQuery({
-    queryKey: ['parcels'],
-    queryFn: getParcels,
-  })
+  const { data: parcels = [], isError: parcelsError } = useParcels()
 
-  const { data: crops = [], isError: cropsError } = useQuery({
-    queryKey: ['crops'],
-    queryFn: getCrops,
-  })
+  const { data: crops = [], isError: cropsError } = useCrops()
 
   const parcelsRef = useRef(parcels)
   const parcelLayersRef = useRef(new Map<string, ParcelLayer>())
@@ -177,40 +169,31 @@ export function MapView() {
     parcelLayersRef.current.set(id, parcelLayer)
   }, [])
 
-  const createParcelMutation = useMutation({
-    mutationFn: createParcel,
-    onSuccess: async () => {
-      temporaryLayer.current?.remove()
-      temporaryLayer.current = null
-      setGeometry(null)
-      setDrawError(null)
-      await queryClient.invalidateQueries({ queryKey: ['parcels'] })
-      setEditControlVersion((v) => v + 1)
-    },
+  const createParcelMutation = useCreateParcel(async () => {
+    temporaryLayer.current?.remove()
+    temporaryLayer.current = null
+    setGeometry(null)
+    setDrawError(null)
+    await queryClient.invalidateQueries({ queryKey: ['parcels'] })
+    setEditControlVersion((v) => v + 1)
   })
-
-  const updateParcelMutation = useMutation({
-    mutationFn: ({ id, parcel }: { id: string; parcel: ParcelInput }) => updateParcel(id, parcel),
-    onSuccess: async () => {
+  const updateParcelMutation = useUpdateParcel(
+    async () => {
       setDrawError(null)
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
     },
-    onError: async () => {
+    async () => {
       setDrawError('Unable to update parcel. Please try again.')
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
     },
-  })
-
-  const deleteParcelMutation = useMutation({
-    mutationFn: deleteParcel,
-    onSuccess: async () => {
-      setSelectedParcelId(null)
-      setSelectedParcelPosition(null)
-      setDeleteMode(false)
-      await queryClient.invalidateQueries({ queryKey: ['parcels'] })
-    },
+  )
+  const deleteParcelMutation = useDeleteParcel(async () => {
+    setSelectedParcelId(null)
+    setSelectedParcelPosition(null)
+    setDeleteMode(false)
+    await queryClient.invalidateQueries({ queryKey: ['parcels'] })
   })
 
   const updateParcelMutationRef = useRef(updateParcelMutation)
