@@ -32,8 +32,8 @@ class_id,demo1_id,crop,disease,eppo_code,weather_rule,source_dataset,license
 30,6,tomato,late_blight,PHYTIN,hutton,mohanty/PlantVillage,CC BY-SA 3.0
 31,7,tomato,leaf_mold,,none,mohanty/PlantVillage,CC BY-SA 3.0
 32,9,tomato,septoria_leaf_spot,SEPTLY,tomcast,mohanty/PlantVillage,CC BY-SA 3.0
-33,10,tomato,spider_mites,TETRUR,none,mohanty/PlantVillage,CC BY-SA 3.0
+33,10,tomato,spider_mites two-spotted_spider_mite,TETRUR,none,mohanty/PlantVillage,CC BY-SA 3.0
 34,11,tomato,target_spot,CORYCA,none,mohanty/PlantVillage,CC BY-SA 3.0
-35,12,tomato,yellow_leaf_curl_virus,,none,mohanty/PlantVillage,CC BY-SA 3.0
-36,8,tomato,mosaic_virus,,none,mohanty/PlantVillage,CC BY-SA 3.0
+35,12,tomato,tomato_yellow_leaf_curl_virus,,none,mohanty/PlantVillage,CC BY-SA 3.0
+36,8,tomato,tomato_mosaic_virus,,none,mohanty/PlantVillage,CC BY-SA 3.0
 37,5,tomato,healthy,,none,mohanty/PlantVillage,CC BY-SA 3.0
