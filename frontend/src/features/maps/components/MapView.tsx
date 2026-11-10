@@ -35,8 +35,11 @@ function ParcelZoomListener({ onZoomChange }: { onZoomChange: (zoom: number) => 
   return null
 }
 
-function orientation(a: Position, b: Position, c: Position): number {
-  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+function orientation(first: Position, second: Position, third: Position): number {
+  return (
+    (second[0] - first[0]) * (third[1] - first[1]) -
+    (second[1] - first[1]) * (third[0] - first[0])
+  )
 }
 
 function isPointOnSegment(point: Position, start: Position, end: Position): boolean {
