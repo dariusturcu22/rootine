@@ -1,32 +1,41 @@
 import { API_BASE_URL } from '../config/env'
 import { useAuthStore } from '../features/auth/store/authStore'
+import type { components } from '../types/api'
 
-export type DiagnosisStatus = 'confident' | 'unsure' | 'invalid_image' | 'crop_not_supported'
+type RequiredSchema<T> = { [K in keyof T]-?: T[K] }
 
-export interface Diagnosis {
-  id: string
-  parcelId: string
-  status: DiagnosisStatus
-  crop: string
-  cropCheck: 'ok' | 'mismatch' | null
-  topPredictions: Array<{
-    label: string
-    disease: string
-    probability: number
-  }>
-  supportLevel: 'lab_and_field_tested' | 'lab_only' | 'not_supported'
-  modelVersion: string
-  createdAt: string
+export type Diagnosis = RequiredSchema<
+  Omit<components['schemas']['DiagnosisResponse'], 'topPredictions'>
+> & {
+  topPredictions: Array<RequiredSchema<components['schemas']['Prediction']>>
 }
+export type DiagnosisStatus = NonNullable<Diagnosis['status']>
 
-export interface LoginResponse {
-  accessToken: string
-  tokenType: 'Bearer'
-  expiresIn: number
-}
+export type LoginResponse = RequiredSchema<components['schemas']['LoginResponse']>
+export type RegisterRequest = components['schemas']['RegisterRequest']
+export type LoginRequest = components['schemas']['LoginRequest']
+export type User = RequiredSchema<components['schemas']['UserResponse']>
 
 export function getDemoToken(): Promise<LoginResponse> {
   return apiFetch<LoginResponse>('/auth/demo-token', { method: 'POST' })
+}
+
+export function register(request: RegisterRequest): Promise<User> {
+  return apiFetch<User>('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
+}
+
+export function login(request: LoginRequest): Promise<LoginResponse> {
+  return apiFetch<LoginResponse>('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
+}
+
+export function getMe(): Promise<User> {
+  return apiFetch<User>('/me')
 }
 
 export function createDiagnosis(image: File, parcelId: string): Promise<Diagnosis> {
@@ -40,14 +49,7 @@ export function createDiagnosis(image: File, parcelId: string): Promise<Diagnosi
   })
 }
 
-export interface Crop {
-  crop: string
-  diagnosisSupported: boolean
-  weatherSupported: boolean
-  supportLevel: 'lab_and_field_tested' | 'lab_only' | 'not_supported'
-  weatherRules: string[]
-  classes: string[]
-}
+export type Crop = components['schemas']['CropResponse']
 
 export function getCrops(): Promise<Crop[]> {
   return apiFetch<Crop[]>('/crops')
@@ -63,22 +65,19 @@ export class ApiError extends Error {
   }
 }
 
-export type Position = [number, number]
-
-export type ParcelGeometry = {
-  type: 'Polygon'
-  coordinates: Position[][]
+export type Position = components['schemas']['PolygonGeometry']['coordinates'][number][number]
+export type ParcelGeometry = components['schemas']['PolygonGeometry']
+export type Parcel = RequiredSchema<components['schemas']['ParcelResponse']>
+export type ParcelInput = components['schemas']['ParcelRequest']
+export type RiskLevel = NonNullable<components['schemas']['RiskResponse']['level']>
+export type DiseaseRisk = RequiredSchema<components['schemas']['DiseaseRisk']>
+export type ParcelRisk = RequiredSchema<
+  Omit<components['schemas']['RiskResponse'], 'diseases'>
+> & {
+  diseases: Array<DiseaseRisk>
 }
-
-export type Parcel = {
-  id: string
-  name: string
-  crop: string
-  geometry: ParcelGeometry
-  createdAt: string
-}
-
-export type ParcelInput = Omit<Parcel, 'id' | 'createdAt'>
+export type HeatmapPoint = RequiredSchema<components['schemas']['HeatmapPoint']>
+export type AlertEvent = RequiredSchema<components['schemas']['AlertEvent']>
 
 /** fetch wrapper: prefixes the API base path, adds the JWT and parses JSON. */
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -126,4 +125,37 @@ export function updateParcel(id: string, parcel: ParcelInput): Promise<Parcel> {
 
 export function deleteParcel(id: string): Promise<void> {
   return apiFetch<void>(`/parcels/${id}`, { method: 'DELETE' })
+}
+
+export function getParcelRisk(id: string): Promise<ParcelRisk> {
+  return apiFetch<ParcelRisk>(`/parcels/${id}/risk`)
+}
+
+export function getHeatmap(): Promise<HeatmapPoint[]> {
+  return apiFetch<HeatmapPoint[]>('/risk/heatmap')
+}
+
+export function getDiagnoses(parcelId?: string): Promise<Diagnosis[]> {
+  const query = parcelId ? `?parcelId=${encodeURIComponent(parcelId)}` : ''
+  return apiFetch<Diagnosis[]>(`/diagnoses${query}`)
+}
+
+export function getDiagnosis(id: string): Promise<Diagnosis> {
+  return apiFetch<Diagnosis>(`/diagnoses/${id}`)
+}
+
+export function openAlertStream(): Promise<Response> {
+  const headers = new Headers()
+  const token = useAuthStore.getState().token
+  if (token) {
+    headers.set('Authorization', ['Bearer', token].join(' '))
+  }
+
+  const url = new URL(`${API_BASE_URL}/alerts/stream`, window.location.href)
+  return fetch(url, { headers }).then((response) => {
+    if (!response.ok) {
+      throw new ApiError(response.status, `Request failed with status ${response.status}`)
+    }
+    return response
+  })
 }

@@ -1,10 +1,55 @@
 :root {
   color-scheme: light;
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-body);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --font-body: 'Nunito', sans-serif;
+  --color-bark: #8d6e63;
+  --color-green: #2e7d32;
+  --color-green-dark: #256829;
+  --color-page: #e9eee4;
+  --color-map: #e1e9dd;
+  --color-light-green: #c5e1a5;
+  --color-surface: #fff;
+  --color-ink: #26332a;
+  --color-muted: #69756b;
+  --color-border: #d7dfd4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-ink);
 }
 
 body {
-  margin: 0;
-  background: #fff;
-  color: #1a1a1a;
+  min-height: 100vh;
+  font-weight: 500;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgb(46 125 50 / 42%);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--color-light-green);
+  color: var(--color-ink);
 }
