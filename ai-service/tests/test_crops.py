@@ -23,10 +23,10 @@ def test_crops_lists_enabled_crops_with_classes(client):
         "late_blight",
         "leaf_mold",
         "septoria_leaf_spot",
-        "spider_mites",
+        "spider_mites two-spotted_spider_mite",
         "target_spot",
-        "yellow_leaf_curl_virus",
-        "mosaic_virus",
+        "tomato_yellow_leaf_curl_virus",
+        "tomato_mosaic_virus",
         "healthy",
     }
 
