@@ -148,9 +148,8 @@ export function MapView() {
   )
   const temporaryLayer = useRef<Layer | null>(null)
 
-  const { data: parcels = [], isError: parcelsError } = useParcels()
-
-  const { data: crops = [], isError: cropsError } = useCrops()
+  const { data: parcels = [], isError: parcelsError, error: parcelsQueryError } = useParcels()
+  const { data: crops = [], isError: cropsError, error: cropsQueryError } = useCrops()
 
   const parcelsRef = useRef(parcels)
   const parcelLayersRef = useRef(new Map<string, ParcelLayer>())
@@ -513,13 +512,13 @@ export function MapView() {
 
       {parcelsError && (
         <p className="feedback-message feedback-error" role="alert">
-          Unable to load parcels. Please try again.
+          {getErrorMessage(parcelsQueryError, 'Unable to load parcels. Please try again.')}
         </p>
       )}
 
       {cropsError && (
         <p className="feedback-message feedback-error" role="alert">
-          Unable to load crops. Please try again.
+          {getErrorMessage(cropsQueryError, 'Unable to load crops. Please try again.')}
         </p>
       )}
 

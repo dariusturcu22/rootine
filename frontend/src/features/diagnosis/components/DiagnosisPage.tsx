@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getErrorMessage } from '../../../lib/apiClient'
 import { useParcels } from '../../maps/api/hooks'
 import { ImageUpload } from './ImageUpload'
 import './DiagnosisPage.css'
@@ -8,7 +9,7 @@ export function DiagnosisPage() {
     () => new URLSearchParams(window.location.search).get('parcelId') ?? '',
   )
   const [hasResult, setHasResult] = useState(false)
-  const { data: parcels = [], isPending, isError } = useParcels()
+  const { data: parcels = [], isPending, isError, error } = useParcels()
 
   if (isPending) {
     return (
@@ -28,7 +29,7 @@ export function DiagnosisPage() {
         <p className="eyebrow">CROP HEALTH</p>
         <h1>Leaf diagnosis</h1>
         <p className="feedback-message feedback-error" role="alert">
-          Unable to load parcels. Please try again.
+          {getErrorMessage(error, 'Unable to load parcels. Please try again.')}
         </p>
       </section>
     )

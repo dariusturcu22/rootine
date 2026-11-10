@@ -68,6 +68,25 @@ export function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback
 }
 
+async function getApiErrorMessage(response: Response): Promise<string> {
+  const responseBody = await response.text()
+
+  if (responseBody) {
+    try {
+      const problem = JSON.parse(responseBody) as { detail?: unknown }
+      if (typeof problem.detail === 'string' && problem.detail) {
+        return problem.detail
+      }
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) {
+        throw error
+      }
+    }
+  }
+
+  return `Request failed with status ${response.status}`
+}
+
 export const SESSION_EXPIRED_EVENT = 'rootine:session-expired'
 
 const publicAuthPaths = new Set(['/auth/register', '/auth/login', '/auth/demo-token'])
@@ -110,7 +129,7 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     if (response.status === 401) {
       handleUnauthorized(path)
     }
-    throw new ApiError(response.status, `Request failed with status ${response.status}`)
+    throw new ApiError(response.status, await getApiErrorMessage(response))
   }
   if (response.status === 204) {
     return undefined as T
@@ -161,7 +180,7 @@ export function getDiagnosis(id: string): Promise<Diagnosis> {
   return apiFetch<Diagnosis>(`/diagnoses/${id}`)
 }
 
-export function openAlertStream(): Promise<Response> {
+export async function openAlertStream(): Promise<Response> {
   const headers = new Headers()
   const token = useAuthStore.getState().token
   if (token) {
@@ -169,13 +188,12 @@ export function openAlertStream(): Promise<Response> {
   }
 
   const url = new URL(`${API_BASE_URL}/alerts/stream`, window.location.href)
-  return fetch(url, { headers }).then((response) => {
-    if (!response.ok) {
-      if (response.status === 401) {
-        handleUnauthorized('/alerts/stream')
-      }
-      throw new ApiError(response.status, `Request failed with status ${response.status}`)
+  const response = await fetch(url, { headers })
+  if (!response.ok) {
+    if (response.status === 401) {
+      handleUnauthorized('/alerts/stream')
     }
-    return response
-  })
+    throw new ApiError(response.status, await getApiErrorMessage(response))
+  }
+  return response
 }

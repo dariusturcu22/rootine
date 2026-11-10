@@ -69,6 +69,28 @@ describe('apiFetch', () => {
     )
   })
 
+  it('uses the exact detail from a Problem Details response', async () => {
+    const detail = 'Parcel name must be unique.'
+    server.use(
+      http.post(
+        '*/api/parcels',
+        () =>
+          HttpResponse.json(
+            { type: 'about:blank', title: 'Unprocessable Entity', status: 422, detail },
+            { status: 422, headers: { 'Content-Type': 'application/problem+json' } },
+          ),
+      ),
+    )
+
+    await expect(
+      apiFetch('/parcels', { method: 'POST', body: JSON.stringify({}) }),
+    ).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 422,
+      message: detail,
+    })
+  })
+
   it('clears the token and raises the session-expired event for a 401 alert stream response', async () => {
     server.use(http.get('*/api/alerts/stream', () => new HttpResponse(null, { status: 401 })))
     useAuthStore.getState().setToken('expired-token')

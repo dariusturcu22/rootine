@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ApiError, getDemoToken, login } from '../../../lib/apiClient'
+import { ApiError, getDemoToken, getErrorMessage, login } from '../../../lib/apiClient'
 import { useAuthStore } from '../store/authStore'
 import './LoginPage.css'
 
@@ -22,7 +22,7 @@ export function LoginPage() {
       if (loginError instanceof ApiError && loginError.status === 401) {
         setError('Your session could not be renewed. Please check your credentials and try again.')
       } else {
-        setError('Unable to sign in. Please try again.')
+        setError(getErrorMessage(loginError, 'Unable to sign in. Please try again.'))
       }
     } finally {
       setIsSubmitting(false)
