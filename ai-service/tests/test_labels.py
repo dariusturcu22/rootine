@@ -3,7 +3,7 @@ from pathlib import Path
 from app.inference.classifier import load_crops, load_labels
 from app.weather.registry import WEATHER_RULES
 
-MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
+MODEL_DIR = Path(__file__).resolve().parent.parent / "models" / "plant-v1"
 
 
 def test_labels_ids_are_unique_and_contiguous():
