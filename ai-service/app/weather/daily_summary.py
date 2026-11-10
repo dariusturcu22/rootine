@@ -150,10 +150,15 @@ def summarize_days(
             sum(effective_wet_temps) / len(effective_wet_temps) if effective_wet_temps else None
         )
 
-        longest_run, _ = _longest_wet_run(raw_rhs, rh_threshold, carry_in_run=len(overnight_temps))
+        # Only hours where both temperature and RH are present can extend a wet run
+        run_rhs: list[float | None] = [
+            rh if (t is not None and rh is not None) else None
+            for t, rh in zip(raw_temps, raw_rhs, strict=True)
+        ]
+        longest_run, _ = _longest_wet_run(run_rhs, rh_threshold, carry_in_run=len(overnight_temps))
         in_day_rh90 = sum(1 for rh in day_rhs if rh >= 90.0)
         overnight_rh90 = len(overnight_temps) if rh_threshold >= 90.0 else 0
-        rh_90_count = min(24, max(in_day_rh90, len(leading_wet) + overnight_rh90))
+        rh_90_count = min(24, in_day_rh90 + overnight_rh90)
 
         summaries.append(
             DailySummary(

@@ -49,7 +49,6 @@ def test_hutton_medium_When_days_are_not_consecutive():
         _make_day(2, min_temp_c=13.0, hours_rh_ge_90=6),
     ]
     res = hutton.assess(days)
-    # Two non-consecutive Hutton days do not form a 2-day streak, only streak=1
     assert res.level in {"low", "medium"}
     assert res.risk_index < 75
 
@@ -84,27 +83,26 @@ def test_tomcast_accumulates_low_medium_high():
     assert tomcast.assess(low_days).level == "low"
 
     med_days = [_make_day(i, wet_hours_count=10, mean_wet_temp=22.0) for i in range(4)]
-    # 4 days * DSV 2 = 8 -> medium
     med_res = tomcast.assess(med_days)
     assert med_res.level == "medium"
     assert 35 <= med_res.risk_index < 75
 
     high_days = [_make_day(i, wet_hours_count=16, mean_wet_temp=22.0) for i in range(6)]
-    # 6 days * DSV 3 = 18 -> high
     high_res = tomcast.assess(high_days)
     assert high_res.level == "high"
     assert high_res.risk_index >= 75
 
 
-def test_summarize_days_carries_wet_period_across_midnight():
-    # Day 1 has 3 wet hours at 21:00..23:00; Day 2 has 4 wet hours at 00:00..03:00.
-    # Together across midnight they form a 7-hour continuous wet run on Day 2!
+def test_summarize_days_carries_wet_period_across_midnight_and_later_spell():
+    # Day 1 has 3 wet hours at 21:00..23:00.
+    # Day 2 has 2 leading wet hours at 00:00..01:00 AND 4 later wet hours at 10:00..13:00.
+    # Carried overnight hours (3) + in-day RH>=90 hours (2 + 4 = 6) = 9 total hours_rh_ge_90.
     times = [f"2026-06-10T{h:02d}:00" for h in range(24)] + [
         f"2026-06-11T{h:02d}:00" for h in range(24)
     ]
     temps = [15.0] * 48
     rhs_day1 = [60.0] * 21 + [92.0, 93.0, 91.0]
-    rhs_day2 = [94.0, 92.0, 91.0, 90.0] + [55.0] * 20
+    rhs_day2 = [94.0, 92.0] + [55.0] * 8 + [91.0, 93.0, 95.0, 90.0] + [55.0] * 10
     hourly = {
         "hourly": {
             "time": times,
@@ -117,15 +115,16 @@ def test_summarize_days_carries_wet_period_across_midnight():
     summaries = summarize_days(hourly)
     assert len(summaries) == 2
     assert summaries[0].hours_rh_ge_90 == 3
-    assert summaries[1].longest_continuous_wet_run == 7
-    assert summaries[1].hours_rh_ge_90 == 7
-    assert summaries[1].wet_hours_count == 7
+    assert summaries[1].longest_continuous_wet_run == 5
+    assert summaries[1].hours_rh_ge_90 == 9
+    assert summaries[1].wet_hours_count == 9
 
 
-def test_summarize_days_handles_missing_values_and_breaks_wet_run():
+def test_summarize_days_handles_missing_temp_and_rh_breaking_wet_run():
+    # Hour 2 has temp=None but rh=95.0 -> must still break the wet run!
     times = [f"2026-06-10T{h:02d}:00" for h in range(6)]
     temps = [14.0, 15.0, None, 16.0, 17.0, 18.0]
-    rhs = [95.0, 95.0, None, 95.0, 95.0, 95.0]
+    rhs = [95.0, 95.0, 95.0, 95.0, 95.0, 95.0]
     hourly = {
         "hourly": {
             "time": times,
@@ -136,7 +135,6 @@ def test_summarize_days_handles_missing_values_and_breaks_wet_run():
     }
     summaries = summarize_days(hourly)
     assert len(summaries) == 1
-    # Missing value at hour 2 breaks the wet streak into 2 and 3
     assert summaries[0].longest_continuous_wet_run == 3
     assert summaries[0].wet_hours_count == 5
 
@@ -173,7 +171,6 @@ async def test_open_meteo_client_retries_on_503():
 
 def test_live_risk_endpoint_computes_real_hutton_and_tomcast():
     times = [f"2026-06-{10 + d:02d}T{h:02d}:00" for d in range(3) for h in range(24)]
-    # 3 consecutive warm wet days -> triggers both Hutton (high) and TOMCAST
     hourly_payload = {
         "hourly": {
             "time": times,
