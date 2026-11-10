@@ -3,3 +3,7 @@ coverage
 node_modules
 package-lock.json
 src/types/api.ts
+
+src/features/diagnosis/components/DiagnosisPage.tsx
+src/lib/apiClient.ts
+src/lib/apiClient.test.ts
