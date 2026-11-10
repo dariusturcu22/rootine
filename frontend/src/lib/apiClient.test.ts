@@ -72,13 +72,11 @@ describe('apiFetch', () => {
   it('uses the exact detail from a Problem Details response', async () => {
     const detail = 'Parcel name must be unique.'
     server.use(
-      http.post(
-        '*/api/parcels',
-        () =>
-          HttpResponse.json(
-            { type: 'about:blank', title: 'Unprocessable Entity', status: 422, detail },
-            { status: 422, headers: { 'Content-Type': 'application/problem+json' } },
-          ),
+      http.post('*/api/parcels', () =>
+        HttpResponse.json(
+          { type: 'about:blank', title: 'Unprocessable Entity', status: 422, detail },
+          { status: 422, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
       ),
     )
 
@@ -88,6 +86,18 @@ describe('apiFetch', () => {
       name: 'ApiError',
       status: 422,
       message: detail,
+    })
+  })
+
+  it('falls back to the status message for a non-JSON error response', async () => {
+    server.use(
+      http.get('*/api/ping', () => new HttpResponse('Service unavailable', { status: 503 })),
+    )
+
+    await expect(apiFetch('/ping')).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 503,
+      message: 'Request failed with status 503',
     })
   })
 
@@ -102,6 +112,24 @@ describe('apiFetch', () => {
     expect(dispatchEvent).toHaveBeenCalledWith(
       expect.objectContaining({ type: SESSION_EXPIRED_EVENT }),
     )
+  })
+
+  it('uses the Problem Details message for an alert stream error', async () => {
+    const detail = 'Alert stream is temporarily unavailable.'
+    server.use(
+      http.get('*/api/alerts/stream', () =>
+        HttpResponse.json(
+          { type: 'about:blank', title: 'Service Unavailable', status: 503, detail },
+          { status: 503, headers: { 'Content-Type': 'application/problem+json' } },
+        ),
+      ),
+    )
+
+    await expect(openAlertStream()).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 503,
+      message: detail,
+    })
   })
 
   it('does not expire an existing session for invalid login credentials', async () => {
