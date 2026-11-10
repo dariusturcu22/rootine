@@ -8,6 +8,6 @@ No datasets and no model files in Git (`*.onnx`, `*.pt`, `*.pth` and `ai-service
 
 ## Consequences
 - The repository stays small and clean.
-- The AI service runs in mock mode until a model is downloaded.
+- With `AI_MOCK=false`, the AI service refuses to start until a model is downloaded. Mock mode is chosen only with `AI_MOCK=true`.
 - Every model version is tied to a release tag, so it can be traced and reproduced.
 - Each dataset's license must be written in `labels.csv` before its data is used.

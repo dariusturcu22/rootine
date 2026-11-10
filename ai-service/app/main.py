@@ -1,15 +1,42 @@
-import logging
+﻿import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 from fastapi import FastAPI
 
 from app.api import crops, health, predict, risk, threat
 from app.config import Settings
-from app.inference.classifier import Classifier, load_crops, load_labels, load_metadata
+from app.inference.classifier import (
+    Classifier,
+    Label,
+    create_inference_session,
+    load_crops,
+    load_labels,
+    load_metadata,
+)
 from app.weather.open_meteo_client import OpenMeteoClient
 
 logger = logging.getLogger("rootine.ai-service")
+
+MODEL_RELEASE_TAG = "v0.1.0-demo1"
+
+
+def load_classifier(
+    settings: Settings, labels: list[Label], metadata: dict[str, Any]
+) -> Classifier | None:
+    if settings.ai_mock:
+        logger.warning("AI_MOCK=true: mock mode, predictions are fixed and no model is loaded")
+        return None
+    model_path = settings.model_dir / metadata["model_file"]
+    if not model_path.exists():
+        raise RuntimeError(
+            f"AI_MOCK=false but the model file {model_path} is missing. "
+            f"Run 'python scripts/download_model.py --tag {MODEL_RELEASE_TAG}' in ai-service/ "
+            "or set AI_MOCK=true."
+        )
+    logger.warning("AI_MOCK=false: loading model %s", model_path)
+    return Classifier(create_inference_session(model_path), labels, metadata, settings)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -27,13 +54,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             archive_url=settings.open_meteo_archive_url,
             cache_ttl=settings.cache_ttl,
         )
-
-        model_path = model_dir / app.state.metadata["model_file"]
-        app.state.mock = settings.ai_mock or not model_path.exists()
-        app.state.classifier = (
-            None if app.state.mock else Classifier(model_path, app.state.metadata)
-        )
-        logger.info("AI service started, mock mode: %s", app.state.mock)
+        app.state.mock = settings.ai_mock
+        app.state.classifier = load_classifier(settings, app.state.labels, app.state.metadata)
         try:
             yield
         finally:
