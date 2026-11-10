@@ -7,4 +7,7 @@ router = APIRouter()
 
 @router.get("/health", response_model=HealthResponse)
 def health(request: Request) -> HealthResponse:
-    return HealthResponse(status="ok", model_version=request.app.state.metadata["model_version"])
+    state = request.app.state
+    return HealthResponse(
+        status="ok", model_version=state.metadata["model_version"], mock=state.mock
+    )
