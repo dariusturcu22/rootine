@@ -14,7 +14,7 @@ import {
 import { EditControl } from 'react-leaflet-draw'
 import { Link } from 'react-router'
 import { MAP_CENTER, MAP_ZOOM } from '../../../config/env'
-import { type ParcelGeometry, type Position } from '../../../lib/apiClient'
+import { getErrorMessage, type ParcelGeometry, type Position } from '../../../lib/apiClient'
 import {
   useCreateParcel,
   useCrops,
@@ -183,8 +183,8 @@ export function MapView() {
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
     },
-    async () => {
-      setDrawError('Unable to update parcel. Please try again.')
+    async (error) => {
+      setDrawError(getErrorMessage(error, 'Unable to update parcel. Please try again.'))
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
     },
@@ -409,7 +409,10 @@ export function MapView() {
                         </div>
                         {deleteParcelMutation.isError && (
                           <p className="feedback-message feedback-error" role="alert">
-                            Unable to delete parcel. Please try again.
+                            {getErrorMessage(
+                              deleteParcelMutation.error,
+                              'Unable to delete parcel. Please try again.',
+                            )}
                           </p>
                         )}
                       </>
@@ -522,7 +525,7 @@ export function MapView() {
 
       {createParcelMutation.isError && (
         <p className="feedback-message feedback-error" role="alert">
-          Unable to save parcel. Please try again.
+          {getErrorMessage(createParcelMutation.error, 'Unable to save parcel. Please try again.')}
         </p>
       )}
     </section>

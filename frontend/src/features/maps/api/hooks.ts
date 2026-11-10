@@ -37,7 +37,7 @@ export function useCreateParcel(onSuccess: () => void | Promise<void>) {
 
 export function useUpdateParcel(
   onSuccess: () => void | Promise<void>,
-  onError: () => void | Promise<void>,
+  onError: (error: Error) => void | Promise<void>,
 ) {
   return useMutation({
     mutationFn: ({ id, parcel }: { id: string; parcel: ParcelInput }) => updateParcel(id, parcel),

@@ -87,7 +87,9 @@ describe('apiFetch', () => {
     useAuthStore.getState().setToken('current-token')
     const dispatchEvent = vi.spyOn(window, 'dispatchEvent')
 
-    await expect(login({ email: 'farmer@example.com', password: 'wrong-password' })).rejects.toMatchObject({
+    await expect(
+      login({ email: 'farmer@example.com', password: 'wrong-password' }),
+    ).rejects.toMatchObject({
       status: 401,
     })
 

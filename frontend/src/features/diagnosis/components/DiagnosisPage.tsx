@@ -8,11 +8,7 @@ export function DiagnosisPage() {
     () => new URLSearchParams(window.location.search).get('parcelId') ?? '',
   )
   const [hasResult, setHasResult] = useState(false)
-  const {
-    data: parcels = [],
-    isPending,
-    isError,
-  } = useParcels()
+  const { data: parcels = [], isPending, isError } = useParcels()
 
   if (isPending) {
     return (

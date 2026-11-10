@@ -2,12 +2,18 @@ import { API_BASE_URL } from '../config/env'
 import { useAuthStore } from '../features/auth/store/authStore'
 import type { components } from '../types/api'
 
-export type Diagnosis = components['schemas']['DiagnosisResponse']
-export type DiagnosisStatus = components['schemas']['DiagnosisStatus']
+type RequiredSchema<K extends keyof components['schemas']> = Required<components['schemas'][K]>
 
-export type LoginResponse = components['schemas']['LoginResponse']
+export type DiagnosisStatus = NonNullable<components['schemas']['DiagnosisResponse']['status']>
+type Prediction = RequiredSchema<'Prediction'>
+export type Diagnosis = Omit<RequiredSchema<'DiagnosisResponse'>, 'crop' | 'topPredictions'> & {
+  crop: string | null
+  topPredictions: Prediction[]
+}
+
+export type LoginResponse = RequiredSchema<'LoginResponse'>
 export type RegisterRequest = components['schemas']['RegisterRequest']
-export type User = components['schemas']['UserResponse']
+export type User = RequiredSchema<'UserResponse'>
 
 export function getDemoToken(): Promise<LoginResponse> {
   return apiFetch<LoginResponse>('/auth/demo-token', { method: 'POST' })
@@ -42,7 +48,7 @@ export function createDiagnosis(image: File, parcelId: string): Promise<Diagnosi
   })
 }
 
-export type Crop = components['schemas']['CropResponse']
+export type Crop = RequiredSchema<'CropResponse'>
 
 export function getCrops(): Promise<Crop[]> {
   return apiFetch<Crop[]>('/crops')
@@ -58,6 +64,10 @@ export class ApiError extends Error {
   }
 }
 
+export function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback
+}
+
 export const SESSION_EXPIRED_EVENT = 'rootine:session-expired'
 
 const publicAuthPaths = new Set(['/auth/register', '/auth/login', '/auth/demo-token'])
@@ -71,15 +81,17 @@ function handleUnauthorized(path: string): void {
   window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
 }
 
-export type Position = components['schemas']['PolygonGeometry']['coordinates'][number][number]
-export type ParcelGeometry = components['schemas']['PolygonGeometry']
-export type Parcel = components['schemas']['ParcelResponse']
+export type Position = RequiredSchema<'PolygonGeometry'>['coordinates'][number][number]
+export type ParcelGeometry = RequiredSchema<'PolygonGeometry'>
+export type Parcel = RequiredSchema<'ParcelResponse'>
 export type ParcelInput = components['schemas']['ParcelRequest']
-export type RiskLevel = components['schemas']['RiskLevel']
-export type DiseaseRisk = components['schemas']['DiseaseRisk']
-export type ParcelRisk = components['schemas']['RiskResponse']
-export type HeatmapPoint = components['schemas']['HeatmapPoint']
-export type AlertEvent = components['schemas']['AlertEvent']
+export type RiskLevel = NonNullable<components['schemas']['RiskResponse']['level']>
+export type DiseaseRisk = RequiredSchema<'DiseaseRisk'>
+export type ParcelRisk = Omit<RequiredSchema<'RiskResponse'>, 'diseases'> & {
+  diseases: DiseaseRisk[]
+}
+export type HeatmapPoint = RequiredSchema<'HeatmapPoint'>
+export type AlertEvent = RequiredSchema<'AlertEvent'>
 
 /** fetch wrapper: prefixes the API base path, adds the JWT and parses JSON. */
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
