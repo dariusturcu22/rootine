@@ -7,6 +7,7 @@ import app.Application;
 import app.aiclient.AiServiceClient;
 import app.diagnosis.service.DiagnosisService;
 import app.parcel.service.ParcelService;
+import app.risk.service.RiskService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,6 +30,7 @@ class DemoTokenDisabledTest {
   @MockitoBean private AiServiceClient aiServiceClient;
   @MockitoBean private DiagnosisService diagnosisService;
   @MockitoBean private ParcelService parcelService;
+  @MockitoBean private RiskService riskService;
 
   @Test
   void demoTokenEndpointIsNotPublicWhenDemoModeIsDisabled() throws Exception {

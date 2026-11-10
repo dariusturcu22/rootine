@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * The latest stored risk result for a parcel. For a crop without a weather model, {@code level} is
+ * A weather-based risk result for a parcel. For a crop without a weather model, {@code level} is
  * {@code not_modelled}, {@code riskIndex} is 0 and {@code diseases} is empty.
  *
  * @param parcelId the parcel the result belongs to
@@ -17,7 +17,7 @@ import java.util.UUID;
  * @param diseases the per-disease risks
  * @param generatedAt when the result was generated, ISO 8601 in UTC
  */
-@Schema(name = "RiskResponse", description = "The latest stored risk result for a parcel.")
+@Schema(name = "RiskResponse", description = "A weather-based risk result for a parcel.")
 public record RiskResponse(
     @Schema(example = "3b241101-e2bb-4255-8caf-4136c566a962") UUID parcelId,
     @Schema(example = "potato") String crop,
