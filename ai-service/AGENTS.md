@@ -23,3 +23,11 @@ All commands are in the [AI section of SETUP.md](../SETUP.md#ai-service). Before
 - Mock responses must follow `docs/api/ai-service.md` exactly. If you change an endpoint, update that file in the same PR.
 - Golden-image tests that need `model.onnx` must be skipped when the file is missing (`pytest.mark.skipif`).
 - Every dataset used must have its license in the `license` column of `labels.csv`. Fill `eppo_code` only from the EPPO Global Database, not from memory.
+
+## Code standards
+
+Follow the [Code standards in the root AGENTS.md](../AGENTS.md#code-standards). Here they mean:
+
+- Ruff enforces naming (`N`), type hints (`ANN`, not in tests), no `print` (`T20`), no commented-out code (`ERA001`), complexity (`C901`) and no magic numbers (`PLR2004`). Use named constants or `Settings` fields for thresholds and limits.
+- The baseline is `[tool.ruff.lint.per-file-ignores]` in `pyproject.toml`. New files are strict.
+- Use `logging`, not `print`, in `app/`.

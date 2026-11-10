@@ -22,6 +22,17 @@ git clone https://github.com/DariusTurcu22/rootine.git
 cd rootine
 ```
 
+## Git identity
+
+Set your name and email once, so your commits show who wrote them (not `unknown`). Use the email of your GitHub account.
+
+```bash
+git config --global user.name "First Last"
+git config --global user.email "you@example.com"
+```
+
+Check with `git config user.name` and `git config user.email`.
+
 ## Environment file
 
 Copy the example. The values in it are safe development values. Never commit `.env`.
