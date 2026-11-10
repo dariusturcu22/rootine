@@ -1,0 +1,123 @@
+.diagnosis-page {
+  display: grid;
+  width: min(100%, 850px);
+  align-content: start;
+  gap: 22px;
+  margin: 0 auto;
+}
+
+.diagnosis-page > .page-heading {
+  margin-bottom: 2px;
+}
+
+.diagnosis-page h1 {
+  margin: 3px 0 5px;
+  color: var(--color-green);
+  font-size: clamp(1.7rem, 3vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.15;
+}
+
+.diagnosis-card,
+.upload-card {
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid rgb(141 110 99 / 13%);
+  border-radius: 20px;
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgb(61 73 53 / 7%);
+}
+
+.diagnosis-card {
+  display: grid;
+  gap: 20px;
+}
+
+.diagnosis-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.diagnosis-step {
+  display: grid;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 14px;
+  background: rgb(197 225 165 / 45%);
+  color: var(--color-green);
+  font-size: 0.85rem;
+  font-weight: 900;
+}
+
+.diagnosis-card-heading h2,
+.upload-card h2 {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.diagnosis-card-heading p,
+.upload-intro {
+  margin: 3px 0 0;
+  color: var(--color-muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.selected-parcel {
+  display: flex;
+  justify-content: space-between;
+  margin: -4px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.88rem;
+}
+
+.selected-parcel strong {
+  color: var(--color-green);
+  text-transform: capitalize;
+}
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  padding: clamp(32px, 8vw, 76px) 24px;
+  border: 1px dashed rgb(141 110 99 / 34%);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 62%);
+  text-align: center;
+}
+
+.empty-state-mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 16px;
+  background: rgb(197 225 165 / 45%);
+  color: var(--color-green);
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.empty-state h2 {
+  margin: 18px 0 5px;
+  color: var(--color-ink);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.empty-state p,
+.diagnosis-status {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.diagnosis-status {
+  padding: 18px 0;
+}

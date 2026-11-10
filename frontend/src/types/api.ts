@@ -3,10 +3,534 @@
  * Do not make direct changes to the file.
  */
 
-export type paths = Record<string, never>;
+export interface paths {
+    "/parcels/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one parcel */
+        get: operations["getParcel"];
+        /**
+         * Replace a parcel
+         * @description Replaces all three fields, so none can be left out.
+         */
+        put: operations["replaceParcel"];
+        post?: never;
+        /**
+         * Delete a parcel
+         * @description Deleting a parcel also deletes its diagnoses and its stored risk results.
+         */
+        delete: operations["deleteParcel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/parcels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the current user's parcels
+         * @description Returns the user's parcels, newest first. No pagination in Demo 1.
+         */
+        get: operations["listParcels"];
+        put?: never;
+        /** Create a parcel */
+        post: operations["createParcel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/diagnoses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List diagnoses
+         * @description Returns the user's diagnoses, newest first. No pagination in Demo 1.
+         */
+        get: operations["listDiagnoses"];
+        put?: never;
+        /**
+         * Create a diagnosis from a leaf photo
+         * @description Uploads a JPEG or PNG photo (up to 10 MB) for a parcel. The backend saves the photo and calls the AI service with the parcel's crop.
+         */
+        post: operations["createDiagnosis"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Register a new account
+         * @description Creates an account. It does not log the user in, so login comes next.
+         */
+        post: operations["register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Log in and obtain an access token
+         * @description Returns a JWT valid for one hour. There is no refresh token in Demo 1.
+         */
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/risk/heatmap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the risk heatmap
+         * @description Returns one point per parcel that has a stored risk result, at the parcel centre. Parcels not yet processed by the daily job are omitted.
+         */
+        get: operations["getHeatmap"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/parcels/{id}/risk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a parcel's current risk result
+         * @description Loads the owned parcel and calls the AI service for a live weather-based risk.
+         */
+        get: operations["getParcelRisk"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the current user
+         * @description Returns the user the token belongs to.
+         */
+        get: operations["getCurrentUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/diagnoses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one diagnosis */
+        get: operations["getDiagnosis"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/crops": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the enabled crops
+         * @description Returns the enabled crops from the AI service. In Demo 1: tomato and potato.
+         */
+        get: operations["listCrops"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/alerts/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Open the live alerts stream
+         * @description Opens an authenticated server-sent events stream. Each high-risk alert arrives as a 'risk-alert' event whose data is an AlertEvent. Use a fetch-based SSE client, because browser EventSource cannot send the Authorization header.
+         */
+        get: operations["streamAlerts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+}
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: never;
+    schemas: {
+        /** @description The fields needed to create or replace a parcel. */
+        ParcelRequest: {
+            /** @example North field */
+            name: string;
+            /** @example potato */
+            crop: string;
+            geometry: components["schemas"]["PolygonGeometry"];
+        };
+        /** @description A GeoJSON Polygon in WGS 84 (longitude, latitude). */
+        PolygonGeometry: {
+            /**
+             * @example Polygon
+             * @enum {string}
+             */
+            type: "Polygon";
+            /**
+             * @example [
+             *       [
+             *         [
+             *           23.59,
+             *           46.77
+             *         ],
+             *         [
+             *           23.6,
+             *           46.77
+             *         ],
+             *         [
+             *           23.6,
+             *           46.78
+             *         ],
+             *         [
+             *           23.59,
+             *           46.78
+             *         ],
+             *         [
+             *           23.59,
+             *           46.77
+             *         ]
+             *       ]
+             *     ]
+             */
+            coordinates: number[][][];
+        };
+        /** @description A parcel with its crop and polygon. */
+        ParcelResponse: {
+            /**
+             * Format: uuid
+             * @example 3b241101-e2bb-4255-8caf-4136c566a962
+             */
+            id?: string;
+            /** @example North field */
+            name?: string;
+            /** @example potato */
+            crop?: string;
+            geometry?: components["schemas"]["PolygonGeometry"];
+            /**
+             * Format: date-time
+             * @example 2026-11-01T08:00:00Z
+             */
+            createdAt?: string;
+        };
+        /** @description RFC 9457 error body (application/problem+json). */
+        ProblemDetail: {
+            /** @example about:blank */
+            type?: string;
+            /** @example Not Implemented */
+            title?: string;
+            /**
+             * Format: int32
+             * @example 501
+             */
+            status?: number;
+            /** @example This endpoint is published in the API contract but is not implemented yet. */
+            detail?: string;
+        };
+        /** @description The multipart body used to create a diagnosis. */
+        DiagnosisUpload: {
+            /**
+             * Format: binary
+             * @description The leaf photo (JPEG or PNG).
+             */
+            image?: string;
+            /**
+             * Format: uuid
+             * @example 3b241101-e2bb-4255-8caf-4136c566a962
+             */
+            parcelId?: string;
+        };
+        /** @description The result of diagnosing one leaf photo. */
+        DiagnosisResponse: {
+            /**
+             * Format: uuid
+             * @example 9a1c7f52-6b3e-4c1a-9d0e-1f2a3b4c5d6e
+             */
+            id?: string;
+            /**
+             * Format: uuid
+             * @example 3b241101-e2bb-4255-8caf-4136c566a962
+             */
+            parcelId?: string;
+            /** @enum {string} */
+            status?: "confident" | "unsure" | "invalid_image" | "crop_not_supported";
+            /** @example potato */
+            crop?: string;
+            /** @enum {string|null} */
+            cropCheck?: "ok" | "mismatch" | null;
+            topPredictions?: components["schemas"]["Prediction"][];
+            /** @enum {string} */
+            supportLevel?: "lab_and_field_tested" | "lab_only" | "not_supported";
+            /** @example plant-v1 */
+            modelVersion?: string;
+            /**
+             * Format: date-time
+             * @example 2026-11-01T08:05:00Z
+             */
+            createdAt?: string;
+        };
+        /** @description One predicted disease and its probability. */
+        Prediction: {
+            /** @example potato_early_blight */
+            label?: string;
+            /** @example early_blight */
+            disease?: string;
+            /**
+             * Format: double
+             * @example 0.92
+             */
+            probability?: number;
+        };
+        /** @description Credentials used to create a new account. */
+        RegisterRequest: {
+            /**
+             * Format: email
+             * @example ana@example.com
+             */
+            email: string;
+            /** @example at-least-8-characters */
+            password: string;
+        };
+        /** @description A user account. */
+        UserResponse: {
+            /**
+             * Format: uuid
+             * @example 7c9e6679-7425-40de-944b-e07fc1f90ae7
+             */
+            id?: string;
+            /** @example ana@example.com */
+            email?: string;
+        };
+        /** @description Credentials used to obtain an access token. */
+        LoginRequest: {
+            /**
+             * Format: email
+             * @example ana@example.com
+             */
+            email: string;
+            /** @example at-least-8-characters */
+            password: string;
+        };
+        /** @description A newly issued access token. */
+        LoginResponse: {
+            /** @example eyJhbGciOiJIUzI1NiJ9... */
+            accessToken?: string;
+            /** @example Bearer */
+            tokenType?: string;
+            /**
+             * Format: int64
+             * @example 3600
+             */
+            expiresIn?: number;
+        };
+        /** @description One parcel's centre and its latest risk result. */
+        HeatmapPoint: {
+            /**
+             * Format: uuid
+             * @example 3b241101-e2bb-4255-8caf-4136c566a962
+             */
+            parcelId?: string;
+            /** @example North field */
+            name?: string;
+            /** @example potato */
+            crop?: string;
+            /**
+             * Format: double
+             * @example 46.775
+             */
+            latitude?: number;
+            /**
+             * Format: double
+             * @example 23.595
+             */
+            longitude?: number;
+            /** @enum {string} */
+            level?: "low" | "medium" | "high" | "not_modelled";
+            /**
+             * Format: int32
+             * @example 42
+             */
+            riskIndex?: number;
+            /**
+             * Format: date-time
+             * @example 2026-11-01T06:00:00Z
+             */
+            generatedAt?: string;
+        };
+        /** @description The risk for one disease from one weather model. */
+        DiseaseRisk: {
+            /** @example late_blight */
+            disease?: string;
+            /** @example hutton */
+            model?: string;
+            /** @enum {string} */
+            level?: "low" | "medium" | "high" | "not_modelled";
+            /**
+             * Format: int32
+             * @example 42
+             */
+            riskIndex?: number;
+        };
+        /** @description A weather-based risk result for a parcel. */
+        RiskResponse: {
+            /**
+             * Format: uuid
+             * @example 3b241101-e2bb-4255-8caf-4136c566a962
+             */
+            parcelId?: string;
+            /** @example potato */
+            crop?: string;
+            /** @enum {string} */
+            level?: "low" | "medium" | "high" | "not_modelled";
+            /**
+             * Format: int32
+             * @example 42
+             */
+            riskIndex?: number;
+            /** @example Mock response: fixed medium risk, real weather rules are not implemented yet. */
+            reason?: string;
+            diseases?: components["schemas"]["DiseaseRisk"][];
+            /**
+             * Format: date-time
+             * @example 2026-11-01T06:00:00Z
+             */
+            generatedAt?: string;
+        };
+        /** @description An enabled crop and what it supports. */
+        CropResponse: {
+            /** @example potato */
+            crop?: string;
+            /** @example true */
+            diagnosisSupported?: boolean;
+            /** @example true */
+            weatherSupported?: boolean;
+            /** @enum {string} */
+            supportLevel?: "lab_and_field_tested" | "lab_only" | "not_supported";
+            /**
+             * @example [
+             *       "hutton"
+             *     ]
+             */
+            weatherRules?: string[];
+            /**
+             * @example [
+             *       "early_blight",
+             *       "healthy",
+             *       "late_blight"
+             *     ]
+             */
+            classes?: string[];
+        };
+        /** @description The data of a 'risk-alert' server-sent event. */
+        AlertEvent: {
+            /**
+             * Format: uuid
+             * @example 3b241101-e2bb-4255-8caf-4136c566a962
+             */
+            parcelId?: string;
+            /** @example North field */
+            parcelName?: string;
+            /** @example potato */
+            crop?: string;
+            /** @enum {string} */
+            level?: "low" | "medium" | "high" | "not_modelled";
+            /**
+             * Format: int32
+             * @example 78
+             */
+            riskIndex?: number;
+            /** @example High risk conditions were detected. */
+            reason?: string;
+            /**
+             * Format: date-time
+             * @example 2026-11-01T06:00:00Z
+             */
+            generatedAt?: string;
+        };
+    };
     responses: never;
     parameters: never;
     requestBodies: never;
@@ -14,4 +538,687 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    getParcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The parcel. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParcelResponse"];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The parcel does not exist or belongs to another user. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The request body or polygon geometry is invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    replaceParcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParcelRequest"];
+            };
+        };
+        responses: {
+            /** @description The replaced parcel. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParcelResponse"];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The parcel does not exist or belongs to another user. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The body is invalid: a blank or too long name, a missing crop, or an invalid polygon. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Not implemented yet. */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    deleteParcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The parcel was deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The parcel does not exist or belongs to another user. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Not implemented yet. */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listParcels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user's parcels, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParcelResponse"][];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    createParcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ParcelRequest"];
+            };
+        };
+        responses: {
+            /** @description The parcel was created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParcelResponse"];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The body is invalid: a blank or too long name, a missing crop, or an invalid polygon. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listDiagnoses: {
+        parameters: {
+            query?: {
+                /** @description List only the diagnoses of this parcel. */
+                parcelId?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user's diagnoses, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosisResponse"][];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description A parcelId is given and the parcel does not exist or belongs to another user. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    createDiagnosis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": components["schemas"]["DiagnosisUpload"];
+            };
+        };
+        responses: {
+            /** @description The diagnosis was created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosisResponse"];
+                };
+            };
+            /** @description A required part is missing, parcelId is not a UUID, or the file is not JPEG or PNG. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The parcel does not exist or belongs to another user. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The file is larger than 10 MB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The AI service is unavailable or returned an error. Nothing is saved. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description The account was created. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description An account with this email already exists. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The email or the password is invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Not implemented yet. */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Login succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LoginResponse"];
+                };
+            };
+            /** @description Wrong email or wrong password. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The body is invalid. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Not implemented yet. */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getHeatmap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description One point per parcel with a stored risk result; an empty list if none. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HeatmapPoint"][];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Not implemented yet. */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getParcelRisk: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current risk result returned by the AI service. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskResponse"];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The parcel does not exist or belongs to another user. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The AI service is unavailable or returned an error. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getCurrentUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The current user. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Not implemented yet. */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    getDiagnosis: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The diagnosis. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiagnosisResponse"];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The diagnosis does not exist or belongs to another user. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    listCrops: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The enabled crops. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CropResponse"][];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description The AI service cannot provide the list. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+    streamAlerts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The stream is open. Events are named 'risk-alert'. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["AlertEvent"];
+                };
+            };
+            /** @description The token is missing, invalid or expired. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+            /** @description Not implemented yet. */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
+                };
+            };
+        };
+    };
+}
