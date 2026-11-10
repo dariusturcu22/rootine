@@ -58,6 +58,19 @@ export class ApiError extends Error {
   }
 }
 
+export const SESSION_EXPIRED_EVENT = 'rootine:session-expired'
+
+const publicAuthPaths = new Set(['/auth/register', '/auth/login', '/auth/demo-token'])
+
+function handleUnauthorized(path: string): void {
+  if (publicAuthPaths.has(path)) {
+    return
+  }
+
+  useAuthStore.getState().clear()
+  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+}
+
 export type Position = components['schemas']['PolygonGeometry']['coordinates'][number][number]
 export type ParcelGeometry = components['schemas']['PolygonGeometry']
 export type Parcel = components['schemas']['ParcelResponse']
@@ -82,6 +95,9 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const url = new URL(`${API_BASE_URL}${path}`, window.location.href)
   const response = await fetch(url, { ...init, headers })
   if (!response.ok) {
+    if (response.status === 401) {
+      handleUnauthorized(path)
+    }
     throw new ApiError(response.status, `Request failed with status ${response.status}`)
   }
   if (response.status === 204) {
@@ -143,6 +159,9 @@ export function openAlertStream(): Promise<Response> {
   const url = new URL(`${API_BASE_URL}/alerts/stream`, window.location.href)
   return fetch(url, { headers }).then((response) => {
     if (!response.ok) {
+      if (response.status === 401) {
+        handleUnauthorized('/alerts/stream')
+      }
       throw new ApiError(response.status, `Request failed with status ${response.status}`)
     }
     return response

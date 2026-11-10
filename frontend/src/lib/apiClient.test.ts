@@ -1,8 +1,17 @@
 import { http, HttpResponse } from 'msw'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useAuthStore } from '../features/auth/store/authStore'
 import { server } from '../test/msw/server'
-import { ApiError, apiFetch, createParcel, getDemoToken, getParcels } from './apiClient'
+import {
+  ApiError,
+  apiFetch,
+  createParcel,
+  getDemoToken,
+  getParcels,
+  login,
+  openAlertStream,
+  SESSION_EXPIRED_EVENT,
+} from './apiClient'
 
 describe('apiFetch', () => {
   afterEach(() => useAuthStore.getState().clear())
@@ -49,9 +58,43 @@ describe('apiFetch', () => {
 
   it('throws ApiError with the status for non-2xx responses', async () => {
     server.use(http.get('*/api/ping', () => new HttpResponse(null, { status: 401 })))
+    useAuthStore.getState().setToken('expired-token')
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent')
 
     await expect(apiFetch('/ping')).rejects.toMatchObject({ name: 'ApiError', status: 401 })
     await expect(apiFetch('/ping')).rejects.toBeInstanceOf(ApiError)
+    expect(useAuthStore.getState().token).toBeNull()
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: SESSION_EXPIRED_EVENT }),
+    )
+  })
+
+  it('clears the token and raises the session-expired event for a 401 alert stream response', async () => {
+    server.use(http.get('*/api/alerts/stream', () => new HttpResponse(null, { status: 401 })))
+    useAuthStore.getState().setToken('expired-token')
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent')
+
+    await expect(openAlertStream()).rejects.toMatchObject({ name: 'ApiError', status: 401 })
+
+    expect(useAuthStore.getState().token).toBeNull()
+    expect(dispatchEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ type: SESSION_EXPIRED_EVENT }),
+    )
+  })
+
+  it('does not expire an existing session for invalid login credentials', async () => {
+    server.use(http.post('*/api/auth/login', () => new HttpResponse(null, { status: 401 })))
+    useAuthStore.getState().setToken('current-token')
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent')
+
+    await expect(login({ email: 'farmer@example.com', password: 'wrong-password' })).rejects.toMatchObject({
+      status: 401,
+    })
+
+    expect(useAuthStore.getState().token).toBe('current-token')
+    expect(dispatchEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: SESSION_EXPIRED_EVENT }),
+    )
   })
 
   it('fetches parcels in the backend contract shape from the MSW handler', async () => {
