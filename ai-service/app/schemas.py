@@ -10,6 +10,7 @@ RiskLevel = Literal["low", "medium", "high", "not_modelled"]
 class HealthResponse(BaseModel):
     status: Literal["ok"]
     model_version: str
+    mock: bool
 
 
 class CropInfo(BaseModel):
