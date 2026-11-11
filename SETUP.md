@@ -110,7 +110,7 @@ VITE_DEMO_MODE=true
 VITE_USE_MSW=false
 ```
 
-The backend must have `DEMO_TOKEN_ENABLED=true`. The frontend then requests a demo JWT at startup and sends it with API calls. MSW remains enabled by default for development and tests. For Docker Compose, set `VITE_DEMO_MODE=true` and `DEMO_TOKEN_ENABLED=true` in the root `.env`, then rebuild the `web` service. Do not enable demo-token mode outside a local demo.
+The backend must have `DEMO_TOKEN_ENABLED=true`. The frontend then requests a demo JWT at startup and sends it with API calls. MSW is disabled by default for development, so parcel requests use the live backend. Set `VITE_USE_MSW=true` only when you explicitly want mock responses. For Docker Compose, set `VITE_DEMO_MODE=true` and `DEMO_TOKEN_ENABLED=true` in the root `.env`, then rebuild the `web` service. Do not enable demo-token mode outside a local demo.
 
 Test, lint, typecheck, build, format:
 

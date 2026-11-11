@@ -157,7 +157,11 @@ export const handlers: RequestHandler[] = [
   }),
 
   http.get('*/api/parcels', () =>
-    HttpResponse.json([...parcels].sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
+    HttpResponse.json(
+      [...parcels].sort((newerParcel, olderParcel) =>
+        olderParcel.createdAt.localeCompare(newerParcel.createdAt),
+      ),
+    ),
   ),
   http.post('*/api/parcels', async ({ request }) => {
     const body = (await request.json()) as ParcelInput

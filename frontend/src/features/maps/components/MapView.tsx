@@ -14,7 +14,12 @@ import {
 import { EditControl } from 'react-leaflet-draw'
 import { Link } from 'react-router'
 import { MAP_CENTER, MAP_ZOOM } from '../../../config/env'
-import { type ParcelGeometry, type Position } from '../../../lib/apiClient'
+import {
+  getErrorMessage,
+  type Parcel,
+  type ParcelGeometry,
+  type Position,
+} from '../../../lib/apiClient'
 import {
   useCreateParcel,
   useCrops,
@@ -35,8 +40,10 @@ function ParcelZoomListener({ onZoomChange }: { onZoomChange: (zoom: number) => 
   return null
 }
 
-function orientation(a: Position, b: Position, c: Position): number {
-  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+function orientation(first: Position, second: Position, third: Position): number {
+  return (
+    (second[0] - first[0]) * (third[1] - first[1]) - (second[1] - first[1]) * (third[0] - first[0])
+  )
 }
 
 function isPointOnSegment(point: Position, start: Position, end: Position): boolean {
@@ -148,9 +155,8 @@ export function MapView() {
   )
   const temporaryLayer = useRef<Layer | null>(null)
 
-  const { data: parcels = [], isError: parcelsError } = useParcels()
-
-  const { data: crops = [], isError: cropsError } = useCrops()
+  const { data: parcels = [], isError: parcelsError, error: parcelsQueryError } = useParcels()
+  const { data: crops = [], isError: cropsError, error: cropsQueryError } = useCrops()
 
   const parcelsRef = useRef(parcels)
   const parcelLayersRef = useRef(new Map<string, ParcelLayer>())
@@ -183,16 +189,19 @@ export function MapView() {
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
     },
-    async () => {
-      setDrawError('Unable to update parcel. Please try again.')
+    async (error) => {
+      setDrawError(getErrorMessage(error, 'Unable to update parcel. Please try again.'))
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
     },
   )
-  const deleteParcelMutation = useDeleteParcel(async () => {
+  const deleteParcelMutation = useDeleteParcel(async (deletedParcelId) => {
     setSelectedParcelId(null)
     setSelectedParcelPosition(null)
     setDeleteMode(false)
+    queryClient.setQueryData<Parcel[]>(['parcels'], (currentParcels = []) =>
+      currentParcels.filter(({ id }) => id !== deletedParcelId),
+    )
     await queryClient.invalidateQueries({ queryKey: ['parcels'] })
   })
 
@@ -409,7 +418,10 @@ export function MapView() {
                         </div>
                         {deleteParcelMutation.isError && (
                           <p className="feedback-message feedback-error" role="alert">
-                            Unable to delete parcel. Please try again.
+                            {getErrorMessage(
+                              deleteParcelMutation.error,
+                              'Unable to delete parcel. Please try again.',
+                            )}
                           </p>
                         )}
                       </>
@@ -510,19 +522,19 @@ export function MapView() {
 
       {parcelsError && (
         <p className="feedback-message feedback-error" role="alert">
-          Unable to load parcels. Please try again.
+          {getErrorMessage(parcelsQueryError, 'Unable to load parcels. Please try again.')}
         </p>
       )}
 
       {cropsError && (
         <p className="feedback-message feedback-error" role="alert">
-          Unable to load crops. Please try again.
+          {getErrorMessage(cropsQueryError, 'Unable to load crops. Please try again.')}
         </p>
       )}
 
       {createParcelMutation.isError && (
         <p className="feedback-message feedback-error" role="alert">
-          Unable to save parcel. Please try again.
+          {getErrorMessage(createParcelMutation.error, 'Unable to save parcel. Please try again.')}
         </p>
       )}
     </section>
