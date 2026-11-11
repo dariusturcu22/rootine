@@ -13,6 +13,7 @@ export type Diagnosis = Omit<RequiredSchema<'DiagnosisResponse'>, 'crop' | 'topP
 
 export type LoginResponse = RequiredSchema<'LoginResponse'>
 export type RegisterRequest = components['schemas']['RegisterRequest']
+export type LoginRequest = components['schemas']['LoginRequest']
 export type User = RequiredSchema<'UserResponse'>
 
 export function getDemoToken(): Promise<LoginResponse> {
@@ -26,7 +27,7 @@ export function register(request: RegisterRequest): Promise<User> {
   })
 }
 
-export function login(request: RegisterRequest): Promise<LoginResponse> {
+export function login(request: LoginRequest): Promise<LoginResponse> {
   return apiFetch<LoginResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(request),
