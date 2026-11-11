@@ -76,6 +76,16 @@ Stop and also delete the database and uploads volumes:
 docker compose down -v
 ```
 
+### Run the real model
+
+`.env.example` starts the AI service in mock mode (`AI_MOCK=true`). To get real diagnoses:
+
+1. Download the model (it is not in Git): `cd ai-service` then `python scripts/download_model.py --tag v0.1.0-demo1`. The file lands in `ai-service/models/plant-v1/model.onnx`, which compose mounts read-only into the container.
+2. Set `AI_MOCK=false` in your `.env`.
+3. Restart: `docker compose up -d --build`.
+
+Check http://localhost:8000/health: it must show `"mock": false`. With `AI_MOCK=false` and no model file, the AI service refuses to start.
+
 ## Frontend
 
 Folder: `frontend/`. Needs Node 24.
@@ -100,7 +110,7 @@ VITE_DEMO_MODE=true
 VITE_USE_MSW=false
 ```
 
-The backend must have `DEMO_TOKEN_ENABLED=true`. The frontend then requests a demo JWT at startup and sends it with API calls. MSW remains enabled by default for development and tests. For Docker Compose, set `VITE_DEMO_MODE=true` and `DEMO_TOKEN_ENABLED=true` in the root `.env`, then rebuild the `web` service. Do not enable demo-token mode outside a local demo.
+The backend must have `DEMO_TOKEN_ENABLED=true`. The frontend then requests a demo JWT at startup and sends it with API calls. MSW is disabled by default for development, so parcel requests use the live backend. Set `VITE_USE_MSW=true` only when you explicitly want mock responses. For Docker Compose, set `VITE_DEMO_MODE=true` and `DEMO_TOKEN_ENABLED=true` in the root `.env`, then rebuild the `web` service. Do not enable demo-token mode outside a local demo.
 
 Test, lint, typecheck, build, format:
 
@@ -201,7 +211,7 @@ source .venv/bin/activate
 pip install -r requirements-dev.txt
 ```
 
-Run in mock mode (http://localhost:8000, docs at http://localhost:8000/docs). Without `model.onnx` the service is in mock mode anyway.
+Run in mock mode (http://localhost:8000, docs at http://localhost:8000/docs). Without `model.onnx`, set `AI_MOCK=true`: with `AI_MOCK=false` the service refuses to start.
 
 Bash:
 

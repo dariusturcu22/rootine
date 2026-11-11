@@ -2,19 +2,19 @@ import { API_BASE_URL } from '../config/env'
 import { useAuthStore } from '../features/auth/store/authStore'
 import type { components } from '../types/api'
 
-type RequiredSchema<T> = { [K in keyof T]-?: T[K] }
+type RequiredSchema<K extends keyof components['schemas']> = Required<components['schemas'][K]>
 
-export type Diagnosis = RequiredSchema<
-  Omit<components['schemas']['DiagnosisResponse'], 'topPredictions'>
-> & {
-  topPredictions: Array<RequiredSchema<components['schemas']['Prediction']>>
+export type DiagnosisStatus = NonNullable<components['schemas']['DiagnosisResponse']['status']>
+type Prediction = RequiredSchema<'Prediction'>
+export type Diagnosis = Omit<RequiredSchema<'DiagnosisResponse'>, 'crop' | 'topPredictions'> & {
+  crop: string | null
+  topPredictions: Prediction[]
 }
-export type DiagnosisStatus = NonNullable<Diagnosis['status']>
 
-export type LoginResponse = RequiredSchema<components['schemas']['LoginResponse']>
+export type LoginResponse = RequiredSchema<'LoginResponse'>
 export type RegisterRequest = components['schemas']['RegisterRequest']
 export type LoginRequest = components['schemas']['LoginRequest']
-export type User = RequiredSchema<components['schemas']['UserResponse']>
+export type User = RequiredSchema<'UserResponse'>
 
 export function getDemoToken(): Promise<LoginResponse> {
   return apiFetch<LoginResponse>('/auth/demo-token', { method: 'POST' })
@@ -49,7 +49,7 @@ export function createDiagnosis(image: File, parcelId: string): Promise<Diagnosi
   })
 }
 
-export type Crop = components['schemas']['CropResponse']
+export type Crop = RequiredSchema<'CropResponse'>
 
 export function getCrops(): Promise<Crop[]> {
   return apiFetch<Crop[]>('/crops')
@@ -65,25 +65,59 @@ export class ApiError extends Error {
   }
 }
 
-export type Position = components['schemas']['PolygonGeometry']['coordinates'][number][number]
-export type ParcelGeometry = components['schemas']['PolygonGeometry']
-export type Parcel = RequiredSchema<components['schemas']['ParcelResponse']>
+export function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback
+}
+
+async function getApiErrorMessage(response: Response): Promise<string> {
+  const responseBody = await response.text()
+
+  if (responseBody) {
+    try {
+      const problem = JSON.parse(responseBody) as { detail?: unknown }
+      if (typeof problem.detail === 'string' && problem.detail) {
+        return problem.detail
+      }
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) {
+        throw error
+      }
+    }
+  }
+
+  return `Request failed with status ${response.status}`
+}
+
+export const SESSION_EXPIRED_EVENT = 'rootine:session-expired'
+
+const publicAuthPaths = new Set(['/auth/register', '/auth/login', '/auth/demo-token'])
+
+function handleUnauthorized(path: string): void {
+  if (publicAuthPaths.has(path)) {
+    return
+  }
+
+  useAuthStore.getState().clear()
+  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+}
+
+export type Position = RequiredSchema<'PolygonGeometry'>['coordinates'][number][number]
+export type ParcelGeometry = RequiredSchema<'PolygonGeometry'>
+export type Parcel = RequiredSchema<'ParcelResponse'>
 export type ParcelInput = components['schemas']['ParcelRequest']
 export type RiskLevel = NonNullable<components['schemas']['RiskResponse']['level']>
-export type DiseaseRisk = RequiredSchema<components['schemas']['DiseaseRisk']>
-export type ParcelRisk = RequiredSchema<
-  Omit<components['schemas']['RiskResponse'], 'diseases'>
-> & {
-  diseases: Array<DiseaseRisk>
+export type DiseaseRisk = RequiredSchema<'DiseaseRisk'>
+export type ParcelRisk = Omit<RequiredSchema<'RiskResponse'>, 'diseases'> & {
+  diseases: DiseaseRisk[]
 }
-export type HeatmapPoint = RequiredSchema<components['schemas']['HeatmapPoint']>
-export type AlertEvent = RequiredSchema<components['schemas']['AlertEvent']>
+export type HeatmapPoint = RequiredSchema<'HeatmapPoint'>
+export type AlertEvent = RequiredSchema<'AlertEvent'>
 
 /** fetch wrapper: prefixes the API base path, adds the JWT and parses JSON. */
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   const token = useAuthStore.getState().token
-  if (token) {
+  if (token && !publicAuthPaths.has(path)) {
     headers.set('Authorization', `Bearer ${token}`)
   }
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
@@ -93,7 +127,10 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   const url = new URL(`${API_BASE_URL}${path}`, window.location.href)
   const response = await fetch(url, { ...init, headers })
   if (!response.ok) {
-    throw new ApiError(response.status, `Request failed with status ${response.status}`)
+    if (response.status === 401) {
+      handleUnauthorized(path)
+    }
+    throw new ApiError(response.status, await getApiErrorMessage(response))
   }
   if (response.status === 204) {
     return undefined as T
@@ -144,7 +181,7 @@ export function getDiagnosis(id: string): Promise<Diagnosis> {
   return apiFetch<Diagnosis>(`/diagnoses/${id}`)
 }
 
-export function openAlertStream(): Promise<Response> {
+export async function openAlertStream(): Promise<Response> {
   const headers = new Headers()
   const token = useAuthStore.getState().token
   if (token) {
@@ -152,10 +189,12 @@ export function openAlertStream(): Promise<Response> {
   }
 
   const url = new URL(`${API_BASE_URL}/alerts/stream`, window.location.href)
-  return fetch(url, { headers }).then((response) => {
-    if (!response.ok) {
-      throw new ApiError(response.status, `Request failed with status ${response.status}`)
+  const response = await fetch(url, { headers })
+  if (!response.ok) {
+    if (response.status === 401) {
+      handleUnauthorized('/alerts/stream')
     }
-    return response
-  })
+    throw new ApiError(response.status, await getApiErrorMessage(response))
+  }
+  return response
 }

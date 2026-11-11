@@ -167,6 +167,17 @@
   color: #8d3022;
 }
 
+.map-feedback-message {
+  position: absolute;
+  z-index: 1000;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 36px);
+  box-shadow: 0 8px 20px rgb(36 49 34 / 16%);
+}
+
 .rootine-leaflet-map .leaflet-control-zoom a {
   color: var(--color-green);
 }
