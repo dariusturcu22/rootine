@@ -51,7 +51,7 @@ h1,h2,h3{font-family:var(--display);font-weight:500;letter-spacing:-.02em;color:
 
 /* type: feature (text left, screenshots right) */
 .s-feature .col-text{position:absolute;left:var(--mx);top:150px;width:800px}
-.s-feature h2{font-size:78px;line-height:1.04;margin:34px 0 40px}
+.s-feature h2{font-size:70px;line-height:1.04;margin:34px 0 40px}
 .s-feature .body{font-size:34px;line-height:1.4;max-width:620px}
 .s-feature ul.points{list-style:none;font-size:32px;line-height:1.5;font-weight:600}
 .s-feature ul.points li::before{content:"";display:inline-block;width:14px;height:14px;background:var(--green);margin-right:18px;border-radius:50%}
@@ -59,9 +59,9 @@ h1,h2,h3{font-family:var(--display);font-weight:500;letter-spacing:-.02em;color:
 .shot img{display:block;width:100%}
 .shot.a{left:960px;top:110px;width:560px}
 .shot.b{left:1230px;top:430px;width:570px}
-.shot.t1{left:880px;top:100px;width:560px}
-.shot.t2{left:1240px;top:370px;width:560px}
-.shot.t3{left:960px;top:640px;width:520px}
+.shot.t1{left:840px;top:90px;width:640px}
+.shot.t2{left:1180px;top:350px;width:620px}
+.shot.t3{left:900px;top:620px;width:560px}
 .shot.solo{left:1000px;top:120px;width:800px}
 
 /* type: numbers (2 to 4 figures) */
@@ -87,15 +87,15 @@ h1,h2,h3{font-family:var(--display);font-weight:500;letter-spacing:-.02em;color:
 .s-flow .flow li{padding:34px 40px 0 0;position:relative;min-height:520px}
 .s-flow .flow li + li{padding-left:40px;border-left:1px solid var(--bark)}
 .s-flow .flow i{font:italic 400 120px/1 var(--display);color:var(--green);display:block;margin-bottom:22px}
-.s-flow .flow h3{font-size:54px;line-height:1.1;margin-bottom:20px}
-.s-flow .flow p{font-size:30px;font-weight:600;color:var(--bark)}
+.s-flow .flow h3{font-size:62px;line-height:1.1;margin-bottom:22px}
+.s-flow .flow p{font-size:34px;line-height:1.3;font-weight:600;color:var(--bark)}
 .s-flow .flow li.end{background:var(--forest);margin-top:-2px;padding:36px 40px 40px 44px;border-left:0}
 .s-flow .flow li.end i{color:var(--leaf)}.s-flow .flow li.end h3{color:#fff}.s-flow .flow li.end p{color:var(--leaf)}
 
 /* flow: optional row of risk levels (icon + word) */
 .s-flow .levels{position:absolute;left:var(--mx);bottom:120px;display:flex;gap:24px}
 .s-flow.has-levels h2{font-size:84px;margin-bottom:80px}
-.s-flow.has-levels .flow li{min-height:400px}
+.s-flow.has-levels .flow li{min-height:480px}
 
 /* type: divider (cut to the screen recording) */
 .s-divider{background:var(--forest);display:flex;align-items:center;justify-content:center}

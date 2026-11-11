@@ -36,7 +36,7 @@ Every claim on the slides, with its evidence. Checked on 2026-11-11 against `ori
 |---|---|---|
 | Rules from published models: Hutton (late blight, potato and tomato) and TOMCAST (early blight and septoria on tomato) | `ai-service/app` (`hutton.py`, `tomcast.py`); PR #72 merged; sprint-1.md | verified |
 | Hourly Open-Meteo data | `OpenMeteoClient` requests `temperature_2m`, `relative_humidity_2m`, `dew_point_2m`, `precipitation` hourly | verified |
-| Risk level and reason per parcel (low, medium, high) | `POST /v1/risk` response has `level`, `risk_index`, `reason`; `docs/api/ai-service.md` matches code; backend `GET /parcels/{id}/risk` implemented in `RiskController` | verified (backend tests not run for this route) |
+| Risk level and reason per parcel (low, medium, high) | `POST /v1/risk` response has `level`, `risk_index`, `reason`; `docs/api/ai-service.md` matches code; backend `GET /parcels/{id}/risk` implemented in `RiskController` | verified; also called live through the full stack on 2026-11-11: both parcels returned level low, risk index 10 (14-day window) |
 | Hutton rule (notes only): day counts if min temperature is at least 10 C and at least 6 hours with humidity of 90% or more; 2 such days in a row give high | `hutton.py`, sprint-1.md | verified |
 | The "near" levels and TOMCAST thresholds are the project's own adaptation, not part of the published models | `hutton.py`, `tomcast.py` | verified (keep out of the voice-over) |
 | Not shown as done: risk heatmap for all parcels (`GET /risk/heatmap` returns 501) | backend `RiskController` | verified |
@@ -51,7 +51,7 @@ Every claim on the slides, with its evidence. Checked on 2026-11-11 against `ori
 | AI client to the AI service (FastAPI + ONNX Runtime) | package `app.aiclient` in the backend; `ai-service/` | verified |
 | Authentication: stateless JWT (HS256). The only token issuer is `POST /auth/demo-token`, enabled only with `DEMO_TOKEN_ENABLED=true`. Register, login and `/me` are 501 stubs | `SecurityConfig`, `DemoTokenService`, `AuthController` | verified |
 | 10 active endpoints: `GET /crops`, `POST/GET /parcels`, `PUT /parcels/{id}`, `POST/GET /diagnoses`, `GET /diagnoses/{id}`, `GET /parcels/{id}/risk`, `POST /auth/demo-token` | controllers, counted 2026-11-11 (16 contract endpoints plus the demo token; 7 are 501 stubs) | verified |
-| 46 tests | 46 `@Test` annotations in 13 classes (26 unit and slice, 20 integration with Testcontainers). Unit tests: all 26 passed when run on a copy. The 20 integration tests were **not** run locally (no Docker); they run in CI | verified (count), partly run |
+| 45 tests, all passing | `./mvnw -B verify` on a copy of `backend/` with Docker running, 2026-11-11: 26 unit and slice tests plus 19 integration tests (Testcontainers), `BUILD SUCCESS`. (Counting `@Test` annotations gives 46; 45 ran.) | verified |
 | CI is green on main | `.github/workflows/ci.yml` (jobs `changes`, `frontend`, `backend`, `ai-service`, `no-attribution`, `ci-result`); latest runs on main for #72, #77, #79 succeeded (`gh run list`) | verified |
 | Not shown as done: email registration, heatmap, alerts (RabbitMQ, email, SSE) | no scheduled job, no `RabbitTemplate`, no `SseEmitter` in the code; ADR 0005 and `docs/architecture/overview.md` describe them as design | verified |
 
@@ -63,8 +63,8 @@ Every claim on the slides, with its evidence. Checked on 2026-11-11 against `ori
 | Photo upload and diagnosis result with top predictions (notes) | `ImageUpload.tsx`, `DiagnosisPage.tsx`; PRs #36, #78 | verified |
 | Risk view with legend and summary counts | `RiskView.tsx` (levels high, medium, low, not modelled) | verified |
 | 30 frontend tests (notes) | `npm test` in `frontend/`: 8 files, 30 tests passed, 2026-11-11 | verified |
-| Screenshots | Real UI of the frontend on `origin/main`, run with `npm run dev` and the project's own mock API (MSW, `VITE_USE_MSW=true`). **The full stack was not run** (Docker is not installed on this machine), so parcel and risk data are test data. The "North field" parcel in Cluj-Napoca is mock data. The map imagery is Esri World Imagery (credit on the slide). No tokens or personal data are visible | verified, with this caveat |
-| Not shown: a real diagnosis result screen | no real leaf photo was used (no dataset in Git, none downloaded); the mock API would return a made-up result | left out on purpose |
+| Screenshots (map, risk, diagnosis result) | Real UI of the frontend served by nginx from the full stack: `docker compose -p rootine-demo up --build` on `origin/main` `98375a5` with `AI_MOCK=false`, the real `model.onnx` (SHA-256 `a26fd1e2...acca4`), `DEMO_TOKEN_ENABLED=true`. Parcels "Lotul din deal" (potato) and "Solarul de roșii" (tomato) were created with `POST /parcels`, 2026-11-11. Map imagery: Esri World Imagery (credit on the slide). No tokens or personal data visible | verified |
+| Diagnosis result on the slide: late blight, 100% (0.9990), status confident, on a tomato parcel | Real run through the UI: `POST /diagnoses` with a PlantVillage sample photo (`raw/color/Tomato___Late_blight/005e3b43-9050-47da-9498-f9ecdcc703b3___RS_Late.B 5104.JPG` from github.com/spMohanty/PlantVillage-Dataset, CC BY-SA 3.0, 256x256, about 19 KB, not committed to the repo; only the screenshot is). Two more photos checked by API on 2026-11-11: potato early blight gave early_blight 0.9996, tomato healthy gave healthy 0.99999. Three photos are an anecdote, not a metric | verified (3 photos) |
 | Alerts page is a placeholder ("No alerts in demo1") | `AlertsPage.tsx` | verified (not on the slide) |
 
 ## Slide 6: Demo
