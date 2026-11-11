@@ -15,12 +15,12 @@ Every claim on the slides, with its evidence. Checked on 2026-11-11 against `ori
 
 | Claim | Evidence | Status |
 |---|---|---|
-| Input: photo and crop; output: top 3 diseases or "nesigur" | `docs/api/ai-service.md`; `docs/sprints/sprint-1.md` ("confidence_threshold = 0.60: ... returns status = unsure"); frontend shows `topPredictions` in `ImageUpload.tsx` | verified |
+| Input: photo and crop; output: top 3 diseases or "nu sunt sigur" | `docs/api/ai-service.md`; `docs/sprints/sprint-1.md` ("confidence_threshold = 0.60: ... returns status = unsure"); frontend shows `topPredictions` in `ImageUpload.tsx` | verified |
 | One model for all crops, with a crop mask (notes only) | `docs/decisions/0002-one-model-crop-mask.md`; sprint-1.md ("crop logit masking (ADR 0002)") | verified |
 | 13 classes in Demo 1 (tomato and potato: 3 potato, 10 tomato) | `ai-service/models/plant-v1/` (`labels.csv`, `crops.json`, `metadata.json`); sprint-1.md per-class table has 13 rows | verified |
 | 38-class target | `labels.csv` has 38 classes; `docs/sprints/sprint-1.md` ("38-class PlantVillage catalog"); `WIP_Plan_ML.pdf` ("Până la Demo 2") | verified |
 | 99,67% accuracy on 3.064 test images (macro-F1 also 99,67%) | `docs/sprints/sprint-1.md` ("Model Evaluation Summary": accuracy 0.996736, macro F1 0.996740, 3,064 held-out test images); PR #65 and PR #77 | documented, not re-measured (see "Metrics" below) |
-| Footnote: on field photos the numbers will be lower | `docs/sprints/sprint-1.md` retrospective (Grad-CAM shows background shortcut learning on external photos); no field accuracy number exists | verified |
+| On field photos the numbers will be lower (said in the slide text, not as a footnote) | `docs/sprints/sprint-1.md` retrospective (Grad-CAM shows background shortcut learning on external photos); no field accuracy number exists | verified |
 | Dataset credit: PlantVillage (Mohanty et al., 2016), CC BY-SA 3.0 | `ai-service/models/plant-v1/labels.csv` (license column); `docs/sprints/sprint-1.md` | verified |
 
 ### Metrics: source, date and caveats
@@ -71,7 +71,7 @@ Every claim on the slides, with its evidence. Checked on 2026-11-11 against `ori
 
 No claims. A cut card, 2 seconds.
 
-## Slide 7: Until Demo 2 (45 s, spoken by Darius) — DRAFT, TO CONFIRM
+## Slide 7: Until Demo 2 (45 s, spoken by Darius): DRAFT, TO CONFIRM
 
 The list is a draft built from `WIP_Plan_ML.pdf` ("Până la Demo 2", Demo 2 on Saturday 12 December 2026) and from `WIP_Plan_Demo1.pdf` ("Nu facem înainte de Demo 1": email registration, heatmap, alerts, training on all 38 classes). It has 5 items; the plan has more (deploy with measured latency, a warning when the photo does not match the chosen crop, a replay mode for weather). Edit the `<li>` elements in `index.html`.
 
