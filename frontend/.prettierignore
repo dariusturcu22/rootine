@@ -7,3 +7,5 @@ src/types/api.ts
 src/features/diagnosis/components/DiagnosisPage.tsx
 src/lib/apiClient.ts
 src/lib/apiClient.test.ts
+src/features/maps/components/MapView.css
+src/features/maps/components/MapView.tsx
