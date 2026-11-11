@@ -1,8 +1,8 @@
 import type { UseQueryResult } from '@tanstack/react-query'
 import { useState } from 'react'
-import { MapContainer, Polygon, Popup, TileLayer, Tooltip, useMapEvents } from 'react-leaflet'
+import { MapContainer, Polygon, TileLayer, Tooltip, useMapEvents } from 'react-leaflet'
 import { MAP_CENTER, MAP_ZOOM } from '../../../config/env'
-import { ApiError } from '../../../lib/apiClient'
+import { ApiError, getErrorMessage } from '../../../lib/apiClient'
 import type { Parcel, ParcelRisk, RiskLevel } from '../../../lib/apiClient'
 import { useParcelRisks, useRiskParcels } from '../api/hooks'
 import './RiskView.css'
@@ -43,14 +43,13 @@ function getRiskErrorMessage(error: unknown): string {
   if (error instanceof ApiError && error.status === 501) {
     return 'Risk results are not available yet.'
   }
-  return 'Unable to load risk for this field.'
+  return getErrorMessage(error, 'Unable to load risk for this field.')
 }
 
 export function RiskView() {
   const [mapZoom, setMapZoom] = useState(MAP_ZOOM)
   const [selectedParcel, setSelectedParcel] = useState<{
     parcel: Parcel
-    position: [number, number]
   } | null>(null)
 
   const parcelsQuery = useRiskParcels()
@@ -74,7 +73,10 @@ export function RiskView() {
       <section className="risk-page">
         <RiskPageHeading />
         <p className="risk-message risk-message-error" role="alert">
-          Unable to load your parcels right now. Please try again later.
+          {getErrorMessage(
+            parcelsQuery.error,
+            'Unable to load your parcels right now. Please try again later.',
+          )}
         </p>
       </section>
     )
@@ -97,9 +99,11 @@ export function RiskView() {
             See the latest weather-based disease risk for each field.
           </p>
         </div>
-        <span className="risk-updated">
-          {newestRisk ? `Latest assessment ${formatGeneratedAt(newestRisk)}` : 'Risk assessment'}
-        </span>
+        <div className="risk-heading-side">
+          <span className="risk-updated">
+            {newestRisk ? `Latest assessment ${formatGeneratedAt(newestRisk)}` : 'Risk assessment'}
+          </span>
+        </div>
       </header>
 
       <div className="risk-summary" aria-label="Risk summary">
@@ -148,11 +152,7 @@ export function RiskView() {
                   weight: selectedParcel?.parcel.id === parcel.id ? 4 : 2,
                 }}
                 eventHandlers={{
-                  click: (event) =>
-                    setSelectedParcel({
-                      parcel,
-                      position: [event.latlng.lat, event.latlng.lng],
-                    }),
+                  click: () => setSelectedParcel({ parcel }),
                 }}
               >
                 {mapZoom >= 9 && (
@@ -163,21 +163,23 @@ export function RiskView() {
               </Polygon>
             )
           })}
-          {selectedParcel && (
-            <Popup
-              position={selectedParcel.position}
-              className="risk-popup"
-              eventHandlers={{
-                remove: () => setSelectedParcel(null),
-              }}
-            >
-              <RiskParcelCard
-                parcel={selectedParcel.parcel}
-                query={riskQueries[parcels.findIndex(({ id }) => id === selectedParcel.parcel.id)]}
-              />
-            </Popup>
-          )}
         </MapContainer>
+        {selectedParcel && (
+          <div className="risk-selected-panel">
+            <button
+              className="risk-selected-close"
+              type="button"
+              aria-label="Close field risk details"
+              onClick={() => setSelectedParcel(null)}
+            >
+              ×
+            </button>
+            <RiskParcelCard
+              parcel={selectedParcel.parcel}
+              query={riskQueries[parcels.findIndex(({ id }) => id === selectedParcel.parcel.id)]}
+            />
+          </div>
+        )}
         <RiskLegend />
       </div>
     </section>

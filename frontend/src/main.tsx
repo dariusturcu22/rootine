@@ -12,7 +12,7 @@ async function start() {
   const root = createRoot(document.getElementById('root')!)
 
   try {
-    if (import.meta.env.DEV && import.meta.env.VITE_USE_MSW !== 'false') {
+    if (import.meta.env.DEV && import.meta.env.VITE_USE_MSW === 'true') {
       const { worker } = await import('./test/msw/browser')
       await worker.start()
     }

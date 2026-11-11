@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
@@ -36,7 +36,6 @@ vi.mock('react-leaflet', () => ({
       {children}
     </div>
   ),
-  Popup: ({ children }: { children?: ReactNode }) => <div data-testid="risk-popup">{children}</div>,
   Tooltip: ({ children }: { children?: ReactNode }) => (
     <span data-testid="risk-parcel-label">{children}</span>
   ),
@@ -86,15 +85,20 @@ describe('RiskView', () => {
     })
     await user.click(screen.getAllByTestId('risk-parcel')[1]!)
 
-    expect(screen.getByTestId('risk-popup')).toHaveTextContent('North field')
-    expect(screen.getByTestId('risk-popup')).toHaveTextContent('potato')
-    expect(screen.getByTestId('risk-popup')).toHaveTextContent('Moderate risk')
-    expect(screen.getByTestId('risk-popup')).toHaveTextContent('42/100')
-    expect(screen.getByTestId('risk-popup')).toHaveTextContent(
-      'Mock response: fixed medium risk, real weather rules are not implemented yet.',
+    const selectedPanel = within(
+      screen.getByRole('button', { name: 'Close field risk details' }).parentElement!,
     )
-    expect(screen.getByTestId('risk-popup')).toHaveTextContent('late blight')
-    expect(screen.getByTestId('risk-popup')).toHaveTextContent('hutton model')
+    expect(selectedPanel.getByText('North field')).toBeInTheDocument()
+    expect(selectedPanel.getByText('potato')).toBeInTheDocument()
+    expect(selectedPanel.getAllByText('Moderate risk')).toHaveLength(2)
+    expect(selectedPanel.getByText('42/100')).toBeInTheDocument()
+    expect(
+      selectedPanel.getByText(
+        'Mock response: fixed medium risk, real weather rules are not implemented yet.',
+      ),
+    ).toBeInTheDocument()
+    expect(selectedPanel.getByText('late blight')).toBeInTheDocument()
+    expect(selectedPanel.getByText('hutton model')).toBeInTheDocument()
     expect(screen.getByRole('progressbar', { name: 'Risk index' })).toHaveAttribute(
       'aria-valuenow',
       '42',
