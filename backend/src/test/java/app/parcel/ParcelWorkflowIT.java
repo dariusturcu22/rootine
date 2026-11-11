@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -171,12 +172,12 @@ class ParcelWorkflowIT extends AbstractIntegrationTest {
   }
 
   @Test
-  void returnsLiveRiskOnlyForTheParcelOwnerAndMapsAiFailures() throws Exception {
+  void readsRiskAndDeletesOnlyTheAuthenticatedUsersParcel() throws Exception {
     UUID ownerId = createUser();
     UUID otherOwnerId = createUser();
     String request =
         """
-        {"name":"Risk field","crop":"potato","geometry":{"type":"Polygon","coordinates":[[[23.59,46.77],[23.60,46.77],[23.60,46.78],[23.59,46.78],[23.59,46.77]]]}}
+        {"name":"North field","crop":"potato","geometry":{"type":"Polygon","coordinates":[[[23.59,46.77],[23.60,46.77],[23.60,46.78],[23.59,46.78],[23.59,46.77]]]}}
         """;
     String created =
         mockMvc
@@ -218,6 +219,13 @@ class ParcelWorkflowIT extends AbstractIntegrationTest {
 
     mockMvc
         .perform(
+            get("/parcels/{id}", parcelId)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(parcelId.toString()));
+
+    mockMvc
+        .perform(
             get("/parcels/{id}/risk", parcelId)
                 .with(jwt().jwt(token -> token.subject(otherOwnerId.toString()))))
         .andExpect(status().isNotFound())
@@ -230,6 +238,32 @@ class ParcelWorkflowIT extends AbstractIntegrationTest {
                 .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
         .andExpect(status().isBadGateway())
         .andExpect(jsonPath("$.status").value(502));
+
+    mockMvc
+        .perform(
+            get("/parcels/{id}", parcelId)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(parcelId.toString()));
+
+    mockMvc
+        .perform(
+            delete("/parcels/{id}", parcelId)
+                .with(jwt().jwt(token -> token.subject(otherOwnerId.toString()))))
+        .andExpect(status().isNotFound());
+    assertThat(parcelRepository.findById(parcelId)).isPresent();
+
+    mockMvc
+        .perform(
+            delete("/parcels/{id}", parcelId)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isNoContent());
+    assertThat(parcelRepository.findById(parcelId)).isEmpty();
+    mockMvc
+        .perform(
+            get("/parcels/{id}", parcelId)
+                .with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isNotFound());
   }
 
   private UUID createUser() {
