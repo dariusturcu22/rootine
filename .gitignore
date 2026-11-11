@@ -36,6 +36,8 @@ ai-service/data/
 ai-service/training/datasets/*
 !ai-service/training/datasets/.gitkeep
 ai-service/models/**/model.onnx
+training/datasets/images/
+outputs
 
 # IDEs and OS
 .idea/

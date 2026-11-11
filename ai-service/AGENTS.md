@@ -17,7 +17,7 @@ All commands are in the [AI section of SETUP.md](../SETUP.md#ai-service). Before
 ## Local rules
 
 - No torch in `requirements.txt`. Serving uses ONNX Runtime only. Training code stays in `training/`.
-- Never hardcode classes or crops. Read them from `models/plant-v1/labels.csv` and `crops.json`.
+- Never hardcode classes or crops. Read them from `models/labels.csv` and `crops.json`.
 - Weather rules (`app/weather/rules/`) are pure functions with a test and a link to their published source in the docstring.
 - Model files and datasets never go into Git (`*.onnx`, `*.pt`, `*.pth`, `data/`). Models are attached to GitHub Releases and fetched with `scripts/download_model.py`.
 - Mock responses must follow `docs/api/ai-service.md` exactly. If you change an endpoint, update that file in the same PR.

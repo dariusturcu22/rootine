@@ -1,6 +1,8 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ComponentProps } from 'react'
 import { createDiagnosis } from '../../../lib/apiClient'
 import { ImageUpload } from './ImageUpload'
 
@@ -14,6 +16,23 @@ vi.mock('../../../lib/apiClient', async () => {
   }
 })
 
+function renderImageUpload(props?: Partial<ComponentProps<typeof ImageUpload>>) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  })
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <ImageUpload
+        parcelId="parcel-1"
+        parcelName="North field"
+        onResultChange={vi.fn()}
+        {...props}
+      />
+    </QueryClientProvider>,
+  )
+}
+
 describe('ImageUpload', () => {
   beforeEach(() => {
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:leaf-preview')
@@ -25,7 +44,7 @@ describe('ImageUpload', () => {
   })
 
   it('disables submission until an image is selected', () => {
-    render(<ImageUpload parcelId="parcel-1" parcelName="North field" onResultChange={vi.fn()} />)
+    renderImageUpload()
 
     expect(screen.getByRole('button', { name: 'Submit for diagnosis' })).toBeDisabled()
   })
@@ -34,7 +53,7 @@ describe('ImageUpload', () => {
     const user = userEvent.setup({ applyAccept: false })
     const file = new File(['not an image'], 'leaf.gif', { type: 'image/gif' })
 
-    render(<ImageUpload parcelId="parcel-1" parcelName="North field" onResultChange={vi.fn()} />)
+    renderImageUpload()
 
     await user.upload(screen.getByLabelText(/Browse files or take a photo/), file)
 
@@ -63,7 +82,7 @@ describe('ImageUpload', () => {
       createdAt: '2026-11-02T17:00:00Z',
     })
 
-    render(<ImageUpload parcelId="parcel-1" parcelName="North field" onResultChange={vi.fn()} />)
+    renderImageUpload()
 
     await user.upload(screen.getByLabelText(/Browse files or take a photo/), file)
 
@@ -100,7 +119,7 @@ describe('ImageUpload', () => {
       modelVersion: 'plant-v1',
       createdAt: '2026-11-02T17:00:00Z',
     })
-    render(<ImageUpload parcelId="parcel-1" parcelName="North field" onResultChange={vi.fn()} />)
+    renderImageUpload()
 
     await user.upload(
       screen.getByLabelText(/Browse files or take a photo/),
@@ -137,9 +156,7 @@ describe('ImageUpload', () => {
       createdAt: '2026-11-02T17:00:00Z',
     })
     const onResultChange = vi.fn()
-    render(
-      <ImageUpload parcelId="parcel-1" parcelName="North field" onResultChange={onResultChange} />,
-    )
+    renderImageUpload({ onResultChange })
 
     await user.upload(
       screen.getByLabelText(/Browse files or take a photo/),
