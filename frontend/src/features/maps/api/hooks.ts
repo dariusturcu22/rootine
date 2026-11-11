@@ -46,6 +46,9 @@ export function useUpdateParcel(
   })
 }
 
-export function useDeleteParcel(onSuccess: () => void | Promise<void>) {
-  return useMutation({ mutationFn: deleteParcel, onSuccess })
+export function useDeleteParcel(onSuccess: (id: string) => void | Promise<void>) {
+  return useMutation({
+    mutationFn: deleteParcel,
+    onSuccess: (_data, id) => onSuccess(id),
+  })
 }

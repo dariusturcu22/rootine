@@ -48,4 +48,24 @@ describe('LoginPage', () => {
       password: 'correct-password',
     })
   })
+
+  it('shows the session-expired message only after an expired session redirect', () => {
+    const { unmount } = render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Sign in to continue.')).toBeInTheDocument()
+    expect(screen.queryByText('Your session expired. Sign in to continue.')).not.toBeInTheDocument()
+
+    unmount()
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/login', state: { sessionExpired: true } }]}>
+        <LoginPage />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText('Your session expired. Sign in to continue.')).toBeInTheDocument()
+  })
 })

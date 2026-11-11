@@ -116,7 +116,7 @@ export type AlertEvent = RequiredSchema<'AlertEvent'>
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   const token = useAuthStore.getState().token
-  if (token) {
+  if (token && !publicAuthPaths.has(path)) {
     headers.set('Authorization', `Bearer ${token}`)
   }
   if (init.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {

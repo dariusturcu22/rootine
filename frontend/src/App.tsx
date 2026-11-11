@@ -12,7 +12,8 @@ export default function App() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const handleSessionExpired = () => navigate('/login', { replace: true })
+    const handleSessionExpired = () =>
+      navigate('/login', { replace: true, state: { sessionExpired: true } })
     window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)
 
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired)

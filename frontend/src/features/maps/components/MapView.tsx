@@ -14,7 +14,12 @@ import {
 import { EditControl } from 'react-leaflet-draw'
 import { Link } from 'react-router'
 import { MAP_CENTER, MAP_ZOOM } from '../../../config/env'
-import { getErrorMessage, type ParcelGeometry, type Position } from '../../../lib/apiClient'
+import {
+  getErrorMessage,
+  type Parcel,
+  type ParcelGeometry,
+  type Position,
+} from '../../../lib/apiClient'
 import {
   useCreateParcel,
   useCrops,
@@ -37,8 +42,7 @@ function ParcelZoomListener({ onZoomChange }: { onZoomChange: (zoom: number) => 
 
 function orientation(first: Position, second: Position, third: Position): number {
   return (
-    (second[0] - first[0]) * (third[1] - first[1]) -
-    (second[1] - first[1]) * (third[0] - first[0])
+    (second[0] - first[0]) * (third[1] - first[1]) - (second[1] - first[1]) * (third[0] - first[0])
   )
 }
 
@@ -191,10 +195,13 @@ export function MapView() {
       setEditControlVersion((version) => version + 1)
     },
   )
-  const deleteParcelMutation = useDeleteParcel(async () => {
+  const deleteParcelMutation = useDeleteParcel(async (deletedParcelId) => {
     setSelectedParcelId(null)
     setSelectedParcelPosition(null)
     setDeleteMode(false)
+    queryClient.setQueryData<Parcel[]>(['parcels'], (currentParcels = []) =>
+      currentParcels.filter(({ id }) => id !== deletedParcelId),
+    )
     await queryClient.invalidateQueries({ queryKey: ['parcels'] })
   })
 

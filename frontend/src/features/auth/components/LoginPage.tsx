@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import { ApiError, getDemoToken, getErrorMessage, login } from '../../../lib/apiClient'
 import { useAuthStore } from '../store/authStore'
 import './LoginPage.css'
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const setToken = useAuthStore((state) => state.setToken)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -46,7 +47,11 @@ export function LoginPage() {
       <section className="login-card" aria-labelledby="login-title">
         <p className="eyebrow">WELCOME BACK</p>
         <h1 id="login-title">Sign in to Rootine</h1>
-        <p className="login-description">Your session expired. Sign in to continue.</p>
+        <p className="login-description">
+          {location.state?.sessionExpired
+            ? 'Your session expired. Sign in to continue.'
+            : 'Sign in to continue.'}
+        </p>
 
         <form className="login-form" onSubmit={handleSubmit}>
           <label>
