@@ -221,6 +221,21 @@
   content: '';
 }
 
+.diagnosis-guidance {
+  margin: 0;
+  padding: 11px 14px;
+  border-left: 3px solid var(--color-bark);
+  border-radius: 0 12px 12px 0;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.diagnosis-guidance-confident {
+  border-left-color: var(--color-green);
+}
+
 .result-note,
 .prediction-empty {
   margin: 0;
