@@ -8,7 +8,7 @@ In the browser all paths are under `/api` (nginx removes the prefix before the b
 
 ## Implementation status
 
-Every endpoint below is published in the backend so the OpenAPI document at `http://localhost:8080/v3/api-docs` lists it and the frontend can run `npm run gen:api`. The demo path supports crop listing, parcel creation/listing/replacement, and diagnosis upload. Other endpoints that are not implemented yet return `501 Not Implemented` with a Problem Details body.
+Every endpoint below is published in the backend so the OpenAPI document at `http://localhost:8080/v3/api-docs` lists it and the frontend can run `npm run gen:api`. The Demo 1 path supports demo-token authentication, crop listing, parcel CRUD, diagnosis upload, and a live per-parcel risk request. Features outside Demo 1 are not available.
 
 
 ## Decisions
@@ -42,31 +42,33 @@ The points that affect the frontend most:
 
 | Status | Meaning in this API |
 |---|---|
-| 200 | Request succeeded. Used for reads, login and parcel replacement. |
-| 201 | A user, parcel or diagnosis was created. |
+| 200 | Request succeeded. Used for reads and parcel replacement. |
+| 201 | A parcel or diagnosis was created. |
 | 204 | A parcel was deleted successfully; no response body. |
 | 400 | A multipart upload is missing a required part or contains an unsupported image format. |
-| 401 | Authentication is missing, invalid or expired, or login credentials are incorrect. |
-| 404 | The requested resource does not exist, belongs to another user, or has no stored risk result. |
-| 409 | Registration conflicts with an existing email address. |
+| 401 | Authentication is missing, invalid or expired. |
+| 404 | The requested resource does not exist or belongs to another user. |
 | 413 | The uploaded file exceeds 10 MB. |
 | 422 | A JSON request body or parcel geometry is invalid. |
 | 502 | The AI service is unavailable or returned an error while processing a crop-list, diagnosis or risk request. |
+| 501 | The endpoint is reserved but outside Demo 1, such as registration, password login, heatmap or alerts. |
 
 Errors use `application/problem+json` and this shape:
 
 ```json
 {
   "type": "about:blank",
-  "title": "Conflict",
-  "status": 409,
-  "detail": "An account with this email already exists."
+  "title": "Unauthorized",
+  "status": 401,
+  "detail": "A valid bearer token is required."
 }
 ```
 
 ## Auth
 
 Register and login do not need a token. In the local demo configuration, `POST /auth/demo-token` is also public when enabled. Every other endpoint needs `Authorization: Bearer <token>` and returns 401 without it.
+
+Demo 1 uses only the local demo-token flow. Registration and password login are reserved API paths and return 501; they are not required to run the demo.
 
 ### POST /auth/register
 
@@ -198,15 +200,15 @@ The polygon must be valid: a closed ring (the first and the last position are th
 
 | Method and path | Request | Response |
 |---|---|---|
-| `POST /parcels` | `name`, `crop`, `geometry` | 201, the parcel (implemented) |
-| `GET /parcels` | | 200, a list of the user's parcels, newest first (implemented) |
+| `POST /parcels` | `name`, `crop`, `geometry` | 201, the parcel |
+| `GET /parcels` | | 200, a list of the user's parcels, newest first |
 | `GET /parcels/{id}` | | 200, the parcel |
-| `PUT /parcels/{id}` | `name`, `crop`, `geometry` | 200, the parcel (implemented) |
+| `PUT /parcels/{id}` | `name`, `crop`, `geometry` | 200, the parcel |
 | `DELETE /parcels/{id}` | | 204 |
 
-`PUT` replaces all three fields, so none can be left out. The list has no pagination in Demo 1. Deleting a parcel also deletes its diagnoses and its stored risk results.
+`PUT` replaces all three fields, so none can be left out. The list has no pagination in Demo 1. Deleting a parcel also deletes its diagnoses.
 
-Parcel creation, listing and replacement are implemented for the demo. Getting one parcel and deleting a parcel still return 501.
+All parcel operations are implemented for the demo and scoped to the authenticated user. Deleting a parcel also deletes its diagnoses through the database foreign-key cascade.
 
 Errors:
 
@@ -241,13 +243,13 @@ Errors:
 
 ### The diagnosis object
 
-| Field | Values and meaning                                                                                                                            |
-|---|-----------------------------------------------------------------------------------------------------------------------------------------------|
-| id | UUID, set by the backend                                                                                                                      |
-| parcelId | The parcel the photo belongs to                                                                                                               |
-| status | `confident`, `unsure`, `invalid_image`, `crop_not_supported`                                                                                  |
-| crop | The crop used, or `null` when the AI service could not determine one |                                                                        |                                                                          |
-| cropCheck | `ok`, `mismatch`, or `null` when no check was possible (`invalid_image`, `crop_not_supported`)                                                |
+| Field | Values and meaning |
+|---|---|
+| id | UUID, set by the backend |
+| parcelId | The parcel the photo belongs to |
+| status | `confident`, `unsure`, `invalid_image`, `crop_not_supported` |
+| crop | The crop used, or `null` when the AI service could not determine one |
+| cropCheck | `ok`, `mismatch`, or `null` when no check was possible (`invalid_image`, `crop_not_supported`) |
 | topPredictions | 3 items: `label` (`<crop>_<disease>`), `disease`, `probability` (0 to 1). Empty list when `status` is `invalid_image` or `crop_not_supported` |
 | supportLevel | `lab_and_field_tested`, `lab_only`, `not_supported`                                                                                           |
 | modelVersion | For example `plant-v1`                                                                                                                        |
@@ -297,9 +299,9 @@ Demo 1 has no endpoint to change or delete a diagnosis. Diagnoses are deleted to
 
 ## Risk and heatmap
 
-The backend does not compute weather risk itself. The single-parcel endpoint calls the AI service
-(`POST /v1/risk`) live using the parcel's centre location and crop. The daily job and heatmap use
-stored results separately.
+The backend does not compute weather risk itself. The per-parcel endpoint calls the AI service
+(`POST /v1/risk`) live using the parcel's centre location and crop. Stored risk, daily refresh,
+heatmap and alerts are not part of Demo 1.
 
 ### GET /parcels/{id}/risk
 
@@ -316,7 +318,7 @@ Response 200:
   "crop": "potato",
   "level": "medium",
   "riskIndex": 42,
-  "reason": "Mock response: fixed medium risk, real weather rules are not implemented yet.",
+  "reason": "Conditions favor late blight.",
   "diseases": [
     { "disease": "late_blight", "model": "hutton", "level": "medium", "riskIndex": 42 }
   ],
@@ -334,32 +336,7 @@ Errors:
 
 ### GET /risk/heatmap
 
-Returns one point for each of the user's parcels that has a stored risk result, using the parcel centre and its latest result. Parcels not yet processed by the daily job are omitted.
-
-Response 200:
-
-```json
-[
-  {
-    "parcelId": "3b241101-e2bb-4255-8caf-4136c566a962",
-    "name": "North field",
-    "crop": "potato",
-    "latitude": 46.775,
-    "longitude": 23.595,
-    "level": "medium",
-    "riskIndex": 42,
-    "generatedAt": "2026-11-01T06:00:00Z"
-  }
-]
-```
-
-An empty list is returned when the user has no parcels with stored risk results.
-
-Errors:
-
-- 401 for a missing, invalid or expired token.
-
-If the AI service is unavailable or returns an error while a risk result is being generated, no new result is stored for that parcel. The existing result, if any, remains available. A risk-generation failure does not change the response from this read endpoint.
+Not implemented in Demo 1. This endpoint returns 501.
 
 ## Alerts (SSE stream)
 

@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 
@@ -38,11 +37,6 @@ public class DiagnosisExceptionHandler {
   @ExceptionHandler(MultipartException.class)
   ProblemDetail handleMalformedMultipart(MultipartException exception) {
     return problem(HttpStatus.BAD_REQUEST, "The multipart request is invalid.");
-  }
-
-  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-  ProblemDetail handleInvalidArgument(MethodArgumentTypeMismatchException exception) {
-    return problem(HttpStatus.BAD_REQUEST, "A request parameter has an invalid value.");
   }
 
   private static ProblemDetail problem(HttpStatus status, String detail) {
