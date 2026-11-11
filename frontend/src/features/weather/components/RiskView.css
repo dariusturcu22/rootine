@@ -22,6 +22,45 @@
   text-align: right;
 }
 
+.risk-heading-side {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+}
+
+.risk-selected-panel {
+  position: absolute;
+  z-index: 600;
+  top: 16px;
+  right: 16px;
+  width: min(300px, calc(100% - 32px));
+  overflow: hidden;
+  border: 1px solid rgb(141 110 99 / 12%);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 14px 36px rgb(25 38 27 / 15%);
+}
+
+.risk-selected-close {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.risk-selected-close:hover {
+  background: var(--color-page);
+}
+
 .risk-summary {
   display: flex;
   flex-wrap: wrap;
@@ -141,20 +180,6 @@
   flex-basis: 9px;
   width: 9px;
   height: 9px;
-}
-
-.risk-popup .leaflet-popup-content-wrapper {
-  padding: 0;
-  border: 1px solid rgb(141 110 99 / 12%);
-  border-radius: 18px;
-  box-shadow: 0 14px 36px rgb(25 38 27 / 24%);
-}
-
-.risk-popup .leaflet-popup-content {
-  width: 250px !important;
-  max-width: calc(100vw - 80px);
-  margin: 0;
-  font-family: var(--font-body);
 }
 
 .risk-parcel-card {
@@ -394,9 +419,21 @@
     align-items: flex-start;
   }
 
+  .risk-heading-side {
+    width: 100%;
+    justify-items: stretch;
+  }
+
   .risk-updated {
-    max-width: 42%;
+    max-width: none;
     font-size: 0.76rem;
+    text-align: left;
+  }
+
+  .risk-selected-panel {
+    top: 10px;
+    right: 10px;
+    width: min(280px, calc(100% - 20px));
   }
 
   .risk-summary {

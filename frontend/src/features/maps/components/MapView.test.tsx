@@ -27,6 +27,7 @@ type MapContainerMockProps = {
 type EditControlMockProps = {
   position: string
   onCreated: (event: DrawEvents.Created) => void
+  onEditStop: (event: DrawEvents.EditStop) => void
   draw: {
     polygon: boolean
     rectangle: boolean
@@ -92,7 +93,11 @@ vi.mock('react-leaflet', () => ({
   ),
   useMapEvents: (handlers: (typeof registeredMapEvents)[number]) => {
     registeredMapEvents.push(handlers)
-    return {}
+    return {
+      getContainer: () => document.createElement('div'),
+      on: vi.fn(),
+      off: vi.fn(),
+    }
   },
 }))
 
@@ -126,6 +131,7 @@ describe('MapView', () => {
     expect(editControlProps).toHaveBeenLastCalledWith(
       expect.objectContaining({
         position: 'topright',
+        onEditStop: expect.any(Function),
         draw: {
           polygon: true,
           rectangle: false,

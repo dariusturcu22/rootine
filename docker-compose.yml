@@ -78,6 +78,8 @@ services:
       CACHE_TTL: ${CACHE_TTL}
     ports:
       - "8000:8000"
+    volumes:
+      - ./ai-service/models/plant-v1:/app/models/plant-v1:ro
     healthcheck:
       test:
         - "CMD"
