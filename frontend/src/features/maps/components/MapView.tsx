@@ -1,7 +1,7 @@
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw/dist/leaflet.draw.css'
 import type { DrawEvents, LatLng, Polygon as LeafletPolygon, Layer } from 'leaflet'
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import {
   FeatureGroup,
   MapContainer,
@@ -14,7 +14,12 @@ import {
 import { EditControl } from 'react-leaflet-draw'
 import { Link } from 'react-router'
 import { MAP_CENTER, MAP_ZOOM } from '../../../config/env'
-import { type ParcelGeometry, type Position } from '../../../lib/apiClient'
+import {
+  getErrorMessage,
+  type Parcel,
+  type ParcelGeometry,
+  type Position,
+} from '../../../lib/apiClient'
 import {
   useCreateParcel,
   useCrops,
@@ -27,16 +32,16 @@ import './MapView.css'
 
 type ParcelLayer = LeafletPolygon & { parcelId?: string }
 
-function ParcelZoomListener({ onZoomChange }: { onZoomChange: (zoom: number) => void }) {
-  useMapEvents({
-    zoomend: (event) => onZoomChange(event.target.getZoom()),
-  })
-
-  return null
+const PARCEL_PATH_OPTIONS = {
+  color: '#2E7D32',
+  fillColor: '#C5E1A5',
+  fillOpacity: 0.55,
 }
 
-function orientation(a: Position, b: Position, c: Position): number {
-  return (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+function orientation(first: Position, second: Position, third: Position): number {
+  return (
+    (second[0] - first[0]) * (third[1] - first[1]) - (second[1] - first[1]) * (third[0] - first[0])
+  )
 }
 
 function isPointOnSegment(point: Position, start: Position, end: Position): boolean {
@@ -103,6 +108,59 @@ function isPointInsidePolygon(point: Position, ring: Position[]): boolean {
   return inside
 }
 
+function isValidPolygonRing(ring: Position[]): boolean {
+  if (ring.length < 4) {
+    return false
+  }
+
+  const first = ring[0]
+  const last = ring.at(-1)
+  if (
+    !first ||
+    !last ||
+    first[0] !== last[0] ||
+    first[1] !== last[1] ||
+    ring.some(([longitude, latitude]) => !Number.isFinite(longitude) || !Number.isFinite(latitude))
+  ) {
+    return false
+  }
+
+  let area = 0
+  for (let index = 0; index < ring.length - 1; index += 1) {
+    const current = ring[index]
+    const next = ring[index + 1]
+    if (!current || !next) {
+      return false
+    }
+    area += current[0] * next[1] - next[0] * current[1]
+  }
+  if (Math.abs(area) <= Number.EPSILON) {
+    return false
+  }
+
+  const segmentCount = ring.length - 1
+  for (let firstIndex = 0; firstIndex < segmentCount; firstIndex += 1) {
+    const firstStart = ring[firstIndex]
+    const firstEnd = ring[firstIndex + 1]
+    if (!firstStart || !firstEnd) {
+      return false
+    }
+
+    for (let secondIndex = firstIndex + 1; secondIndex < segmentCount; secondIndex += 1) {
+      if (secondIndex === firstIndex + 1 || (firstIndex === 0 && secondIndex === segmentCount - 1)) {
+        continue
+      }
+      const secondStart = ring[secondIndex]
+      const secondEnd = ring[secondIndex + 1]
+      if (secondStart && secondEnd && segmentsIntersect(firstStart, firstEnd, secondStart, secondEnd)) {
+        return false
+      }
+    }
+  }
+
+  return true
+}
+
 function polygonsOverlap(firstRing: Position[], secondRing: Position[]): boolean {
   for (let firstIndex = 0; firstIndex < firstRing.length - 1; firstIndex += 1) {
     const firstStart = firstRing[firstIndex]
@@ -131,8 +189,111 @@ function polygonsOverlap(firstRing: Position[], secondRing: Position[]): boolean
 
   return Boolean(
     (firstPoint && isPointInsidePolygon(firstPoint, secondRing)) ||
-    (secondPoint && isPointInsidePolygon(secondPoint, firstRing)),
+      (secondPoint && isPointInsidePolygon(secondPoint, firstRing)),
   )
+}
+
+function extractClosedRing(parcelLayer: LeafletPolygon): Position[] {
+  const rawLatLngs = parcelLayer.getLatLngs()
+  const firstLevel = Array.isArray(rawLatLngs[0]) ? rawLatLngs[0] : rawLatLngs
+  const ringLatLngs = (Array.isArray(firstLevel[0]) ? firstLevel[0] : firstLevel) as LatLng[]
+  const ring = ringLatLngs.map(({ lng, lat }): Position => [lng, lat])
+  const first = ring[0]
+  const last = ring.at(-1)
+
+  if (first && last && (first[0] !== last[0] || first[1] !== last[1])) {
+    ring.push([...first])
+  }
+
+  return ring
+}
+
+function ParcelPolygon({
+  parcel,
+  showLabel,
+  onRegisterLayer,
+  onSelectParcel,
+}: {
+  parcel: Parcel
+  showLabel: boolean
+  onRegisterLayer: (id: string, layer: LeafletPolygon | null) => void
+  onSelectParcel: (id: string, position: [number, number]) => void
+}) {
+  const positions = useMemo(
+    () =>
+      parcel.geometry.coordinates[0].map(
+        ([longitude, latitude]): [number, number] => [latitude, longitude],
+      ),
+    [parcel.geometry.coordinates],
+  )
+
+  return (
+    <Polygon
+      ref={(layer) => onRegisterLayer(parcel.id, layer)}
+      eventHandlers={{
+        click: (event) => {
+          onSelectParcel(parcel.id, [event.latlng.lat, event.latlng.lng])
+        },
+      }}
+      positions={positions}
+      pathOptions={PARCEL_PATH_OPTIONS}
+    >
+      {showLabel && (
+        <Tooltip permanent direction="center" className="parcel-name-label">
+          {parcel.name}
+        </Tooltip>
+      )}
+    </Polygon>
+  )
+}
+
+function MapDrawEventsListener({
+  onZoomChange,
+  onEditStart,
+  onVertexEdit,
+  onDrawStart,
+  onActionButtonClick,
+}: {
+  onZoomChange: (zoom: number) => void
+  onEditStart: () => void
+  onVertexEdit: (event: unknown) => void
+  onDrawStart: () => void
+  onActionButtonClick: (action: 'save' | 'cancel') => void
+}) {
+  const map = useMapEvents({
+    zoomend: (event) => onZoomChange(event.target.getZoom()),
+  })
+
+  useEffect(() => {
+    const container = map.getContainer()
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null
+      const actionLink = target?.closest('.leaflet-draw-actions a') as HTMLAnchorElement | null
+      if (!actionLink) return
+
+      const text = actionLink.textContent?.trim().toLowerCase()
+      if (text === 'cancel') {
+        onActionButtonClick('cancel')
+      } else if (text === 'save') {
+        onActionButtonClick('save')
+      }
+    }
+
+    container.addEventListener('pointerdown', handlePointerDown, true)
+    map.on('draw:editstart', onEditStart)
+    map.on('draw:editvertex', onVertexEdit)
+    map.on('draw:drawstart', onDrawStart)
+
+    return () => {
+      container.removeEventListener('pointerdown', handlePointerDown, true)
+      map.off('draw:editstart', onEditStart)
+      map.off('draw:editvertex', onVertexEdit)
+      map.off('draw:drawstart', onDrawStart)
+    }
+  }, [map, onEditStart, onVertexEdit, onDrawStart, onActionButtonClick])
+
+  return null
 }
 
 export function MapView() {
@@ -147,16 +308,23 @@ export function MapView() {
     null,
   )
   const temporaryLayer = useRef<Layer | null>(null)
+  const isCancelClickedRef = useRef(false)
+  const pendingEditErrorRef = useRef<string | null>(null)
+  const editedRingsRef = useRef(new Map<string, Position[]>())
+  const hasInitializedParcelsRef = useRef(false)
 
-  const { data: parcels = [], isError: parcelsError } = useParcels()
-
-  const { data: crops = [], isError: cropsError } = useCrops()
+  const { data: parcels = [], isError: parcelsError, error: parcelsQueryError } = useParcels()
+  const { data: crops = [], isError: cropsError, error: cropsQueryError } = useCrops()
 
   const parcelsRef = useRef(parcels)
   const parcelLayersRef = useRef(new Map<string, ParcelLayer>())
 
   useEffect(() => {
     parcelsRef.current = parcels
+    if (parcels.length > 0 && !hasInitializedParcelsRef.current) {
+      hasInitializedParcelsRef.current = true
+      setEditControlVersion((v) => v + 1)
+    }
   }, [parcels])
 
   const registerParcelLayer = useCallback((id: string, layer: LeafletPolygon | null) => {
@@ -169,6 +337,94 @@ export function MapView() {
     parcelLayersRef.current.set(id, parcelLayer)
   }, [])
 
+  const handleSelectParcel = useCallback((id: string, position: [number, number]) => {
+    setSelectedParcelId(id)
+    setSelectedParcelPosition(position)
+  }, [])
+
+  const computeCurrentEditError = useCallback((): string | null => {
+    for (const [id, parcelLayer] of parcelLayersRef.current.entries()) {
+      const parcel = parcelsRef.current.find((p) => p.id === id)
+      if (!parcel) continue
+
+      const ring = editedRingsRef.current.get(id) ?? extractClosedRing(parcelLayer)
+
+      if (!isValidPolygonRing(ring)) {
+        return 'The parcel geometry must be a valid polygon.'
+      }
+
+      const overlapsOther = parcelsRef.current.some(
+        (otherParcel) =>
+          otherParcel.id !== id && polygonsOverlap(ring, otherParcel.geometry.coordinates[0]),
+      )
+
+      if (overlapsOther) {
+        return 'This parcel overlaps an existing parcel. Edit it in a different area.'
+      }
+    }
+
+    return null
+  }, [])
+
+  const handleEditStart = useCallback(() => {
+    isCancelClickedRef.current = false
+    pendingEditErrorRef.current = null
+    editedRingsRef.current.clear()
+    setDrawError((prev) => (prev !== null ? null : prev))
+  }, [])
+
+  const handleDrawStart = useCallback(() => {
+    isCancelClickedRef.current = false
+    pendingEditErrorRef.current = null
+    editedRingsRef.current.clear()
+    setDrawError((prev) => (prev !== null ? null : prev))
+  }, [])
+
+  const handleVertexEdit = useCallback(
+    (event: unknown) => {
+      const poly = (event as { poly?: ParcelLayer })?.poly
+      if (poly) {
+        const ring = extractClosedRing(poly)
+        const matchedId =
+          poly.parcelId ??
+          Array.from(parcelLayersRef.current.entries()).find(([, layer]) => layer === poly)?.[0]
+
+        if (matchedId) {
+          editedRingsRef.current.set(matchedId, ring)
+        }
+      }
+
+      parcelLayersRef.current.forEach((layer, id) => {
+        if (!editedRingsRef.current.has(id)) {
+          editedRingsRef.current.set(id, extractClosedRing(layer))
+        } else if (!poly) {
+          editedRingsRef.current.set(id, extractClosedRing(layer))
+        }
+      })
+
+      pendingEditErrorRef.current = computeCurrentEditError()
+    },
+    [computeCurrentEditError],
+  )
+
+  const handleActionButtonClick = useCallback(
+    (action: 'save' | 'cancel') => {
+      if (action === 'cancel') {
+        isCancelClickedRef.current = true
+        pendingEditErrorRef.current = null
+        editedRingsRef.current.clear()
+        return
+      }
+
+      isCancelClickedRef.current = false
+      parcelLayersRef.current.forEach((layer, id) => {
+        editedRingsRef.current.set(id, extractClosedRing(layer))
+      })
+      pendingEditErrorRef.current = computeCurrentEditError()
+    },
+    [computeCurrentEditError],
+  )
+
   const createParcelMutation = useCreateParcel(async () => {
     temporaryLayer.current?.remove()
     temporaryLayer.current = null
@@ -179,20 +435,22 @@ export function MapView() {
   })
   const updateParcelMutation = useUpdateParcel(
     async () => {
-      setDrawError(null)
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
     },
-    async () => {
-      setDrawError('Unable to update parcel. Please try again.')
+    async (error) => {
+      setDrawError(getErrorMessage(error, 'Unable to update parcel. Please try again.'))
       await queryClient.invalidateQueries({ queryKey: ['parcels'] })
       setEditControlVersion((version) => version + 1)
     },
   )
-  const deleteParcelMutation = useDeleteParcel(async () => {
+  const deleteParcelMutation = useDeleteParcel(async (deletedParcelId) => {
     setSelectedParcelId(null)
     setSelectedParcelPosition(null)
     setDeleteMode(false)
+    queryClient.setQueryData<Parcel[]>(['parcels'], (currentParcels = []) =>
+      currentParcels.filter(({ id }) => id !== deletedParcelId),
+    )
     await queryClient.invalidateQueries({ queryKey: ['parcels'] })
   })
 
@@ -206,22 +464,17 @@ export function MapView() {
     setDrawError(null)
 
     const layer = event.layer as LeafletPolygon
-    const latLngs = layer.getLatLngs()[0] as LatLng[]
-
-    const coordinates: Position[] = latLngs.map(({ lng, lat }) => [lng, lat])
-
-    const first = coordinates[0]
-    const last = coordinates.at(-1)
-
-    if (!first || !last) {
-      return
-    }
-
-    if (first[0] !== last[0] || first[1] !== last[1]) {
-      coordinates.push([...first])
-    }
+    const coordinates = extractClosedRing(layer)
 
     if (coordinates.length >= 4) {
+      if (!isValidPolygonRing(coordinates)) {
+        temporaryLayer.current?.remove()
+        temporaryLayer.current = null
+        setGeometry(null)
+        setDrawError('The parcel geometry must be a valid polygon.')
+        return
+      }
+
       const overlapsExistingParcel = parcelsRef.current.some((parcel) =>
         polygonsOverlap(coordinates, parcel.geometry.coordinates[0] ?? []),
       )
@@ -241,54 +494,95 @@ export function MapView() {
     }
   }
 
-  const handleParcelsEdited = useCallback((event: DrawEvents.Edited) => {
-    event.layers.eachLayer((layer) => {
-      const parcelLayer = layer as ParcelLayer
-      const parcel = parcelsRef.current.find(
-        ({ id }) => id === parcelLayer.parcelId || parcelLayersRef.current.get(id) === parcelLayer,
-      )
-      if (!parcel) return
-
-      const latLngs = (parcelLayer.getLatLngs()[0] as LatLng[]).map((coordinate): Position => [
-        coordinate.lng,
-        coordinate.lat,
-      ])
-      const firstCoordinate = latLngs[0]
-      const lastCoordinate = latLngs[latLngs.length - 1]
-
-      if (
-        firstCoordinate &&
-        lastCoordinate &&
-        (firstCoordinate[0] !== lastCoordinate[0] || firstCoordinate[1] !== lastCoordinate[1])
-      ) {
-        latLngs.push([...firstCoordinate])
-      }
-
-      const overlapsOtherParcel = parcelsRef.current.some(
-        (otherParcel) =>
-          otherParcel.id !== parcel.id &&
-          polygonsOverlap(latLngs, otherParcel.geometry.coordinates[0]),
-      )
-      if (overlapsOtherParcel) {
-        parcelLayer.setLatLngs(
-          parcel.geometry.coordinates[0].map(([longitude, latitude]) => [latitude, longitude]),
-        )
-        setDrawError('This parcel overlaps an existing parcel. Edit it in a different area.')
+  const handleParcelsEdited = useCallback(
+    (event: DrawEvents.Edited) => {
+      if (pendingEditErrorRef.current) {
+        parcelLayersRef.current.forEach((parcelLayer, id) => {
+          const parcel = parcelsRef.current.find((p) => p.id === id)
+          if (parcel) {
+            parcelLayer.setLatLngs(
+              parcel.geometry.coordinates[0].map(([longitude, latitude]) => [latitude, longitude]),
+            )
+          }
+        })
+        setDrawError(pendingEditErrorRef.current)
+        editedRingsRef.current.clear()
         return
       }
 
-      setDrawError(null)
-      parcelLayer.setStyle({ color: '#2E7D32', fillColor: '#C5E1A5', fillOpacity: 0.55 })
-      updateParcelMutationRef.current.mutate({
-        id: parcel.id,
-        parcel: {
-          name: parcel.name,
-          crop: parcel.crop,
-          geometry: { type: 'Polygon', coordinates: [latLngs] },
-        },
+      event.layers.eachLayer((layer) => {
+        const parcelLayer = layer as ParcelLayer
+        const parcel = parcelsRef.current.find(
+          ({ id }) => id === parcelLayer.parcelId || parcelLayersRef.current.get(id) === parcelLayer,
+        )
+        if (!parcel) return
+
+        const latLngs = editedRingsRef.current.get(parcel.id) ?? extractClosedRing(parcelLayer)
+        editedRingsRef.current.delete(parcel.id)
+
+        if (!isValidPolygonRing(latLngs)) {
+          parcelLayer.setLatLngs(
+            parcel.geometry.coordinates[0].map(([longitude, latitude]) => [latitude, longitude]),
+          )
+          pendingEditErrorRef.current = 'The parcel geometry must be a valid polygon.'
+          setDrawError(pendingEditErrorRef.current)
+          return
+        }
+
+        const overlapsOtherParcel = parcelsRef.current.some(
+          (otherParcel) =>
+            otherParcel.id !== parcel.id &&
+            polygonsOverlap(latLngs, otherParcel.geometry.coordinates[0]),
+        )
+        if (overlapsOtherParcel) {
+          parcelLayer.setLatLngs(
+            parcel.geometry.coordinates[0].map(([longitude, latitude]) => [latitude, longitude]),
+          )
+          pendingEditErrorRef.current =
+            'This parcel overlaps an existing parcel. Edit it in a different area.'
+          setDrawError(pendingEditErrorRef.current)
+          return
+        }
+
+        setDrawError(null)
+        const updatedGeometry: ParcelGeometry = { type: 'Polygon', coordinates: [latLngs] }
+        queryClient.setQueryData<Parcel[]>(['parcels'], (currentParcels = []) =>
+          currentParcels.map((currentParcel) =>
+            currentParcel.id === parcel.id
+              ? { ...currentParcel, geometry: updatedGeometry }
+              : currentParcel,
+          ),
+        )
+        parcelLayer.setStyle(PARCEL_PATH_OPTIONS)
+        updateParcelMutationRef.current.mutate({
+          id: parcel.id,
+          parcel: {
+            name: parcel.name,
+            crop: parcel.crop,
+            geometry: updatedGeometry,
+          },
+        })
       })
-    })
-  }, [])
+    },
+    [queryClient],
+  )
+
+  const handleParcelEditStop = useCallback(() => {
+    if (!isCancelClickedRef.current) {
+      const errorToDisplay = pendingEditErrorRef.current ?? computeCurrentEditError()
+      if (errorToDisplay) {
+        setDrawError(errorToDisplay)
+      }
+    }
+
+    isCancelClickedRef.current = false
+    pendingEditErrorRef.current = null
+    editedRingsRef.current.clear()
+
+    window.setTimeout(() => {
+      setEditControlVersion((version) => version + 1)
+    }, 0)
+  }, [computeCurrentEditError])
 
   return (
     <section className="map-page" aria-label="Map of Romania">
@@ -305,7 +599,13 @@ export function MapView() {
 
       <div className="map-frame">
         <MapContainer center={MAP_CENTER} zoom={MAP_ZOOM} className="rootine-leaflet-map">
-          <ParcelZoomListener onZoomChange={setMapZoom} />
+          <MapDrawEventsListener
+            onZoomChange={setMapZoom}
+            onEditStart={handleEditStart}
+            onVertexEdit={handleVertexEdit}
+            onDrawStart={handleDrawStart}
+            onActionButtonClick={handleActionButtonClick}
+          />
           <TileLayer
             attribution="Tiles &copy; Esri"
             url="https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
@@ -319,37 +619,20 @@ export function MapView() {
 
           <FeatureGroup key={editControlVersion}>
             {parcels.map((parcel) => (
-              <Polygon
+              <ParcelPolygon
                 key={parcel.id}
-                ref={(layer) => registerParcelLayer(parcel.id, layer)}
-                eventHandlers={{
-                  click: (event) => {
-                    setSelectedParcelId(parcel.id)
-                    setSelectedParcelPosition([event.latlng.lat, event.latlng.lng])
-                  },
-                }}
-                positions={parcel.geometry.coordinates[0].map(([longitude, latitude]) => [
-                  latitude,
-                  longitude,
-                ])}
-                pathOptions={{
-                  color: '#2E7D32',
-                  fillColor: '#C5E1A5',
-                  fillOpacity: 0.55,
-                }}
-              >
-                {mapZoom >= 9 && (
-                  <Tooltip permanent direction="center" className="parcel-name-label">
-                    {parcel.name}
-                  </Tooltip>
-                )}
-              </Polygon>
+                parcel={parcel}
+                showLabel={mapZoom >= 9}
+                onRegisterLayer={registerParcelLayer}
+                onSelectParcel={handleSelectParcel}
+              />
             ))}
 
             <EditControl
               position="topright"
               onCreated={handlePolygonCreated}
               onEdited={handleParcelsEdited}
+              onEditStop={handleParcelEditStop}
               edit={{ remove: false }}
               draw={{
                 polygon: true,
@@ -409,7 +692,10 @@ export function MapView() {
                         </div>
                         {deleteParcelMutation.isError && (
                           <p className="feedback-message feedback-error" role="alert">
-                            Unable to delete parcel. Please try again.
+                            {getErrorMessage(
+                              deleteParcelMutation.error,
+                              'Unable to delete parcel. Please try again.',
+                            )}
                           </p>
                         )}
                       </>
@@ -500,29 +786,29 @@ export function MapView() {
             </div>
           </form>
         )}
-      </div>
 
-      {drawError && (
-        <p className="feedback-message feedback-error" role="alert">
-          {drawError}
-        </p>
-      )}
+        {drawError && (
+          <p className="map-feedback-message feedback-message feedback-error" role="alert">
+            {drawError}
+          </p>
+        )}
+      </div>
 
       {parcelsError && (
         <p className="feedback-message feedback-error" role="alert">
-          Unable to load parcels. Please try again.
+          {getErrorMessage(parcelsQueryError, 'Unable to load parcels. Please try again.')}
         </p>
       )}
 
       {cropsError && (
         <p className="feedback-message feedback-error" role="alert">
-          Unable to load crops. Please try again.
+          {getErrorMessage(cropsQueryError, 'Unable to load crops. Please try again.')}
         </p>
       )}
 
       {createParcelMutation.isError && (
         <p className="feedback-message feedback-error" role="alert">
-          Unable to save parcel. Please try again.
+          {getErrorMessage(createParcelMutation.error, 'Unable to save parcel. Please try again.')}
         </p>
       )}
     </section>
