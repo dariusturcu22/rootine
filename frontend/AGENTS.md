@@ -22,3 +22,12 @@ All commands are in the [Frontend section of SETUP.md](../SETUP.md#frontend). Be
 - Tests sit next to the file: `X.test.tsx`. Mock the network with MSW (`src/test/msw`); unhandled requests fail the test on purpose.
 - Keep `.gitkeep` files in empty folders until they get real files.
 - The browser only knows the path `/api`. Never hardcode `localhost:8080`.
+
+## Code standards
+
+Follow the [Code standards in the root AGENTS.md](../AGENTS.md#code-standards). Here they mean:
+
+- ESLint enforces `id-length` (minimum 2, except `i`, `j`, `_`) and `max-lines-per-function` (200). CI runs `prettier --check`.
+- The baselines are `lintBaselineFiles` in `eslint.config.js` and the list at the end of `.prettierignore`. New files are strict.
+- No `any`. Colours, sizes and spacing come from the design tokens in CSS variables, not literals in components.
+- Every API error shown to the user has a friendly text. Never render a raw status code or enum value.

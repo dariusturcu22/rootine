@@ -24,3 +24,13 @@ All commands are in the [Backend section of SETUP.md](../SETUP.md#backend). Befo
 - A change to a controller (path, request, response, status) updates `docs/api/backend.md` in the same PR.
 - The backend has no weather module. Weather risk comes from the AI service `/v1/risk`.
 - Spring Boot 4 renamed many packages and starters. Check the Spring Boot 4 docs before copying older examples.
+
+## Code standards
+
+Follow the [Code standards in the root AGENTS.md](../AGENTS.md#code-standards). Here they mean:
+
+- No raw `Object`, no `var` where the type is not obvious from the right side, no single-letter lambda parameters.
+- Methods stay under about 40 lines. Controllers stay thin; logic goes in services.
+- Limits, timeouts and sizes come from `application.yml`, not literals in code.
+- Javadoc explains why or the contract, not what the next line does.
+- There is no extra lint tool for these rules yet (Spotless only formats). Reviewers check them.

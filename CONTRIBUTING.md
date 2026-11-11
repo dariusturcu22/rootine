@@ -30,7 +30,7 @@ Never push directly to `main`.
 
 ## 3. Commit
 
-Use [Conventional Commits](https://www.conventionalcommits.org/) with the folder as the scope: `type(scope): short description`. Scopes: `frontend`, `backend`, `ai-service`, `docs`, `ci`. Use no scope for changes that touch many parts.
+Use [Conventional Commits](https://www.conventionalcommits.org/) with the folder as the scope: `type(scope): short description`. Scopes: `frontend`, `backend`, `ai-service`, `docs`, `ci`, and `root` for changes that touch many parts or only root files.
 
 ```
 feat(backend): add parcel CRUD
@@ -39,6 +39,8 @@ docs(api): describe the diagnoses endpoints
 test(ai-service): add golden image tests
 chore(ci): update setup-node
 ```
+
+Allowed types: `feat`, `fix`, `docs`, `test`, `chore`, `refactor`, `ci`, `build`, `perf`, `style`. `feature` is not a type.
 
 Rules for commit messages and PR text:
 
@@ -52,6 +54,18 @@ Run the checks of the part you changed before you push. Commands are in [SETUP.m
 
 Every PR includes tests for what it changes.
 
+### Lint baseline
+
+Stricter lint rules (see the Code standards in [AGENTS.md](AGENTS.md#code-standards)) apply to every new file. Files that broke them when the rules were added are listed in one place per tool:
+
+| Tool | Baseline list |
+|---|---|
+| ruff (`ai-service`) | `[tool.ruff.lint.per-file-ignores]` in `ai-service/pyproject.toml` (except the `tests/**` line, which is a permanent rule) |
+| ESLint (`frontend`) | `lintBaselineFiles` in `frontend/eslint.config.js` |
+| Prettier (`frontend`) | the last block of `frontend/.prettierignore` |
+
+Never add a file to a baseline. When you clean a file, remove it from the list in the same PR.
+
 ## 5. Open a pull request
 
 ```bash
@@ -64,6 +78,7 @@ Open a PR to `main` and fill in the template. Requirements:
 - `Closes #12` in the description, so the issue closes when the PR merges.
 - Tests added, docs updated, API contract updated if an endpoint changed.
 - CI is green. The only required check is `ci-result`.
+- The `pr-title` check tells you if the title follows `type(scope): description`. It is advisory until Demo 1 (Friday 13 November 2026). After the demo we make it blocking by adding it to the `needs` list of `ci-result`.
 
 ## 6. Review
 
