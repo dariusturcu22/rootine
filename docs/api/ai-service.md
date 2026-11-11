@@ -4,7 +4,7 @@ First draft. Only the backend calls this service. It is not reachable from the b
 
 Base URL inside Docker: `http://ai-service:8000`. Locally: `http://localhost:8000`.
 
-With `AI_MOCK=true` the service runs in **mock mode** and returns the fixed responses shown below. With `AI_MOCK=false` the service loads `models/plant-v1/model.onnx` and **refuses to start** if the file is missing (download it with `python scripts/download_model.py --tag v0.1.0-demo1`). Real weather rules are not implemented yet; with `AI_MOCK=false`, `risk` returns `501`.
+With `AI_MOCK=true` the service runs in **mock mode** and returns the fixed responses shown below. With `AI_MOCK=false` the service loads `models/plant-v1/model.onnx` and **refuses to start** if the file is missing (download it with `python scripts/download_model.py --tag v0.1.0-demo1`).
 
 ## GET /health
 
@@ -118,7 +118,7 @@ Example (`crop=banana`):
 
 ## POST /v1/risk
 
-Weather-based disease risk for one location and crop. The AI service fetches the weather from Open-Meteo itself.
+Weather-based disease risk for one location and crop. The AI service fetches 14 days of hourly weather from Open-Meteo itself (cached for 1 hour) and runs the crop weather rules (`hutton` for potato and tomato `late_blight`, `tomcast` for tomato `early_blight` and `septoria_leaf_spot`). Hutton applies to tomato as well because the same pathogen (*Phytophthora infestans*) causes late blight on both crops under the same temperature and humidity thresholds.
 
 Request (JSON):
 
@@ -128,7 +128,7 @@ Request (JSON):
 
 `replay_date` is optional. When set, the risk is computed as if that day was today.
 
-Validation: `latitude` from -90 to 90, `longitude` from -180 to 180. A bad value returns `422`.
+Validation: `latitude` from -90 to 90, `longitude` from -180 to 180. A bad value returns `422`. If Open-Meteo cannot be reached after retries, the endpoint returns `502`.
 
 Response `200`:
 
