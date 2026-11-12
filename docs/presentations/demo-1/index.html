@@ -34,14 +34,14 @@
   <section class="slide s-numbers on-pale" aria-label="Diagnostic ML" data-seconds="15">
     <svg class="leafbg tl" aria-hidden="true"><use href="#leafshape"/></svg>
     <div class="col-text">
-      <h2 class="anim">Dai o poză și cultura. Modelul alege cele 3 boli cele mai probabile.</h2>
-      <p class="soft anim d1">Dacă nu e sigur, spune „nu sunt sigur”.</p>
+      <h2 class="anim">Încarci o poză cu frunza. Modelul alege cele mai probabile 3 diagnostice.</h2>
+      <p class="soft anim d1">Când nu poate decide clar, arată că răspunsul e incert.</p>
       <p class="soft anim d2" style="font-size:30px">Antrenat pe setul PlantVillage (Mohanty et al., 2016, CC BY-SA 3.0).</p>
     </div>
     <div class="rows">
-      <div class="row anim d1"><b>13</b><span>clase acum, la tomate și cartofi</span></div>
-      <div class="row anim d2"><b>38</b><span>clase în plan, tot setul PlantVillage</span></div>
-      <div class="row anim d3"><b class="long">99,67%</b><span>acuratețe pe imagini de laborator. Pe poze din câmp va fi mai mică.</span></div>
+      <div class="row anim d1"><b>13</b><span>diagnostice posibile acum, pentru culturile de roșii și cartofi.</span></div>
+      <div class="row anim d2"><b>38</b><span>diagnostice în plan, pentru toate culturile din PlantVillage</span></div>
+      <div class="row anim d3"><b class="long">99,67%</b><span>acuratețe pe imagini de laborator. În condiții reale, aceasta scade.</span></div>
     </div>
     <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Primește poza unei frunze și cultura parcelei; răspunde cu top 3 boli sau „nu sunt sigur”</li><li>Un singur model pentru toate culturile, cu mască pe cultură</li><li>13 clase acum (tomate, cartofi), 38 în plan</li><li>Acuratețe și macro-F1 de 99,67% pe 3.064 de imagini de laborator; pe poze din câmp vor fi mai mici</li><li>Setul de date: PlantVillage, CC BY-SA 3.0</li></ul></aside>
   </section>
