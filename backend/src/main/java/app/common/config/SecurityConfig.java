@@ -1,5 +1,6 @@
 package app.common.config;
 
+import app.common.security.ProblemDetailsSecurityHandler;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import java.nio.charset.StandardCharsets;
 import javax.crypto.spec.SecretKeySpec;
@@ -33,7 +34,9 @@ public class SecurityConfig {
 
   @Bean
   SecurityFilterChain securityFilterChain(
-      HttpSecurity http, @Value("${app.demo-token.enabled:false}") boolean demoTokenEnabled)
+      HttpSecurity http,
+      @Value("${app.demo-token.enabled:false}") boolean demoTokenEnabled,
+      ProblemDetailsSecurityHandler problemDetailsSecurityHandler)
       throws Exception {
     return http.csrf(AbstractHttpConfigurer::disable)
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -52,7 +55,17 @@ public class SecurityConfig {
               auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
               auth.anyRequest().authenticated();
             })
-        .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()))
+        .exceptionHandling(
+            exceptions ->
+                exceptions
+                    .authenticationEntryPoint(problemDetailsSecurityHandler)
+                    .accessDeniedHandler(problemDetailsSecurityHandler))
+        .oauth2ResourceServer(
+            oauth ->
+                oauth
+                    .jwt(Customizer.withDefaults())
+                    .authenticationEntryPoint(problemDetailsSecurityHandler)
+                    .accessDeniedHandler(problemDetailsSecurityHandler))
         .build();
   }
 

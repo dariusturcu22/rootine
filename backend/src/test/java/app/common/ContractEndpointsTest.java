@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -252,6 +253,16 @@ class ContractEndpointsTest {
   void parcelEndpointsRequireAuthentication() throws Exception {
     mockMvc.perform(get("/parcels")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/crops")).andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void malformedJsonReturns422ProblemDetails() throws Exception {
+    mockMvc
+        .perform(post("/parcels").contentType(MediaType.APPLICATION_JSON).content("{").with(jwt()))
+        .andExpect(status().isUnprocessableEntity())
+        .andExpect(content().contentTypeCompatibleWith(PROBLEM_JSON))
+        .andExpect(jsonPath("$.status").value(422))
+        .andExpect(jsonPath("$.title").value("Unprocessable Entity"));
   }
 
   @Test

@@ -12,7 +12,7 @@ import java.util.UUID;
  * @param id the diagnosis's UUID, set by the backend
  * @param parcelId the parcel the photo belongs to
  * @param status the outcome of the diagnosis
- * @param crop the crop used
+ * @param crop the crop used, or {@code null} when the AI service could not determine it
  * @param cropCheck whether the photo's crop matched the parcel's crop, or {@code null} when no
  *     check was possible
  * @param topPredictions three predictions; empty when {@code status} is {@code invalid_image} or
@@ -26,7 +26,7 @@ public record DiagnosisResponse(
     @Schema(example = "9a1c7f52-6b3e-4c1a-9d0e-1f2a3b4c5d6e") UUID id,
     @Schema(example = "3b241101-e2bb-4255-8caf-4136c566a962") UUID parcelId,
     DiagnosisStatus status,
-    @Schema(example = "potato") String crop,
+    @Schema(nullable = true, example = "potato") String crop,
     @Schema(nullable = true) CropCheck cropCheck,
     List<Prediction> topPredictions,
     SupportLevel supportLevel,

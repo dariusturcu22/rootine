@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.locationtech.jts.geom.Coordinate;
@@ -46,6 +47,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockPart;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @AutoConfigureMockMvc
 class DiagnosisWorkflowIT extends AbstractIntegrationTest {
@@ -228,10 +230,15 @@ class DiagnosisWorkflowIT extends AbstractIntegrationTest {
   void savesResultWithNullCropAsAValidDiagnosis() throws Exception {
     UUID ownerId = UUID.randomUUID();
     Parcel parcel = savedParcel(ownerId);
+    AtomicBoolean transactionActiveDuringAiCall = new AtomicBoolean(true);
     when(aiServiceClient.predict(any(), eq("potato")))
-        .thenReturn(
-            new PredictionResponse(
-                "invalid_image", null, null, List.of(), "not_supported", "plant-v1"));
+        .thenAnswer(
+            invocation -> {
+              transactionActiveDuringAiCall.set(
+                  TransactionSynchronizationManager.isActualTransactionActive());
+              return new PredictionResponse(
+                  "invalid_image", null, null, List.of(), "not_supported", "plant-v1");
+            });
 
     var creation =
         mockMvc
@@ -247,6 +254,7 @@ class DiagnosisWorkflowIT extends AbstractIntegrationTest {
             .andReturn();
 
     uploadedPhoto = savedPhotoPath(creation.getResponse().getContentAsString());
+    assertThat(transactionActiveDuringAiCall).isFalse();
   }
 
   @Test

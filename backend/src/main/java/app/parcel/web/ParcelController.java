@@ -1,7 +1,5 @@
 package app.parcel.web;
 
-import static app.common.error.EndpointStub.notImplemented;
-
 import app.common.config.OpenApiConfig;
 import app.common.error.ProblemDetailResponse;
 import app.parcel.dto.ParcelRequest;
@@ -36,8 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Parcels: a crop and a polygon per parcel. A user sees only their own parcels, so every endpoint
  * needs a token.
  *
- * <p>Creation, listing and replacement are implemented for the demo. Other parcel operations remain
- * published as 501 stubs.
+ * <p>Every parcel operation is scoped to the authenticated user.
  */
 @RestController
 @RequestMapping(path = "/parcels", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -124,18 +121,11 @@ public class ParcelController {
         content =
             @Content(
                 mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "422",
-        description = "The request body or polygon geometry is invalid.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @GetMapping("/{id}")
-  public ParcelResponse getParcel(@PathVariable UUID id) {
-    throw notImplemented();
+  public ParcelResponse getParcel(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+    return parcelService.getParcel(UUID.fromString(jwt.getSubject()), id);
   }
 
   @Operation(
@@ -169,13 +159,6 @@ public class ParcelController {
             @Content(
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
   public ParcelResponse replaceParcel(
@@ -187,7 +170,7 @@ public class ParcelController {
 
   @Operation(
       summary = "Delete a parcel",
-      description = "Deleting a parcel also deletes its diagnoses and its stored risk results.")
+      description = "Deleting a parcel also deletes its diagnoses.")
   @ApiResponses({
     @ApiResponse(responseCode = "204", description = "The parcel was deleted."),
     @ApiResponse(
@@ -204,17 +187,10 @@ public class ParcelController {
             @Content(
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @DeleteMapping("/{id}")
   @ResponseStatus(HttpStatus.NO_CONTENT)
-  public void deleteParcel(@PathVariable UUID id) {
-    throw notImplemented();
+  public void deleteParcel(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+    parcelService.deleteParcel(UUID.fromString(jwt.getSubject()), id);
   }
 }
