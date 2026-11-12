@@ -21,5 +21,6 @@
 - [ ] API contract updated in `docs/api/` (if an endpoint changed)
 - [ ] No datasets, models or secrets in the diff
 - [ ] `Closes #<issue>` is in this description
+- [ ] Branch name, commit types and PR title follow Conventional Commits (`type(scope): description`)
 
 Closes #

@@ -31,6 +31,24 @@ All setup, run, test and lint commands are in [SETUP.md](SETUP.md). Do not copy 
 7. No datasets, trained models or secrets in Git. Models are attached to GitHub Releases and downloaded by a script.
 8. Every PR includes tests for what it changes.
 
+## Code standards
+
+These rules apply to every part. CI enforces the ones a linter can check; reviewers enforce the rest.
+
+- Names say what the value is. No single-letter names, except `i`, `j` or `_` in short loops. Lambda and arrow-function parameters are words.
+- Types: type hints on public Python functions, no `any` in TypeScript, no raw `Object` and no `var` abuse in Java.
+- Functions stay under about 40 lines. Components stay under about 200 lines. Split by feature, not by layer.
+- No stub files merged "for later". A stub is allowed only with a link to its ticket inside the file.
+- No hard-coded colours, sizes, URLs or limits in components. Use design tokens, named constants and config.
+- Prefer clear names over comments. Write a comment only to say why, never what.
+- Every error a user can see has a friendly message. Never show a raw HTTP status or a raw enum value.
+- Commits and PR titles: Conventional Commits, `type(scope): description`, with the folder as scope. Types: `feat`, `fix`, `docs`, `test`, `chore`, `refactor`, `ci`, `build`, `perf`, `style`. `feature` is not a type.
+- Branches: `feat/<issue>-name` (or `fix/`, `docs/`, `chore/`, `test/` with the issue number).
+- Set `git config user.name` and `git config user.email` before your first commit (see [SETUP.md](SETUP.md#git-identity)).
+- A contract change (endpoint, request, response, status) touches `docs/api/` in the same PR.
+- No AI attribution anywhere (rule 1).
+- Existing files that break the new lint rules are listed in one baseline list per tool (see [CONTRIBUTING.md](CONTRIBUTING.md#lint-baseline)). Do not add files to it. Remove a file from it when you clean it.
+
 ## Architecture in short
 
 - Browser talks to `web` (nginx in the frontend image). `/` serves the React app, `/api/*` goes to the backend. SSE also goes through `/api` with proxy buffering off.
