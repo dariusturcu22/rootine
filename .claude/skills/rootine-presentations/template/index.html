@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rootine, titlul prezentării</title>
+<link rel="stylesheet" href="deck.css">
+</head>
+<body>
+<!-- Logo mark: the leaf from the app (frontend/src/layouts/MainLayout.tsx). Only the outline colour changes.
+     leafshape is the same leaf as one flat shape, used big and faint in the background. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="leaf" viewBox="0 0 108 108">
+    <path d="M16 86C15 45 42 12 102 0L17 86Z" fill="var(--leaf-outline)"/>
+    <path d="M22 87C62 86 91 61 103 2L22 87Z" fill="#c5e1a5"/>
+    <path d="M18 84 0 105" fill="none" stroke="var(--leaf-outline)" stroke-width="6"/>
+  </symbol>
+  <symbol id="leafshape" viewBox="0 0 108 108">
+    <path d="M16 86C15 45 42 12 102 0L17 86Z" fill="currentColor"/>
+    <path d="M22 87C62 86 91 61 103 2L22 87Z" fill="currentColor"/>
+    <path d="M18 84 0 105" fill="none" stroke="currentColor" stroke-width="6"/>
+  </symbol>
+</svg>
+<main class="stage">
+
+  <!-- TYPE 1: title. Logo, one headline (two lines), one plain sentence. Use .mark on one word at most. -->
+  <section class="slide s-title on-green" aria-label="Titlu" data-seconds="10">
+    <svg class="leafbg br" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="brand anim"><svg><use href="#leaf"/></svg><span>Rootine</span></div>
+    <h1 class="anim d1">Fermierul vede boala<br>când e deja <span class="mark">târziu</span>.</h1>
+    <p class="soft anim d2">Rootine recunoaște boala dintr-o poză a frunzei și avertizează când vremea o favorizează.</p>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Problema, într-o propoziție</li><li>Produsul, într-o propoziție</li></ul></aside>
+  </section>
+
+  <!-- TYPE 2: statement. One sentence, nothing else. -->
+  <section class="slide s-statement on-pale" aria-label="Idee" data-seconds="8">
+    <svg class="leafbg tl" aria-hidden="true"><use href="#leafshape"/></svg>
+    <h2 class="anim">Un singur model pentru <span class="mark">toate culturile</span>.</h2>
+    <p class="soft anim d1">Cultura se alege cu o mască, nu cu un model separat.</p>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>De ce un singur model</li></ul></aside>
+  </section>
+
+  <!-- TYPE 3: feature. Words left, real screenshots on the brown band (shot solo, or t1/t2/t3 overlapped). -->
+  <section class="slide s-feature on-pale" aria-label="Funcție" data-seconds="20">
+    <div class="band"></div>
+    <div class="col-text">
+      <h2 class="anim">Încarci poza unei frunze și vezi diagnosticul.</h2>
+      <p class="soft anim d1">Primești cele 3 boli cele mai probabile.</p>
+    </div>
+    <figure class="shot solo anim d2"><img src="assets/example-diagnosis.jpg" alt="Rezultatul unui diagnostic în aplicația Rootine"></figure>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Ce face utilizatorul</li><li>Ce primește</li></ul></aside>
+  </section>
+
+  <!-- TYPE 4: numbers. 2 or 3 rows, each with a figure and one sentence. Every number needs a line in FACTS.md. -->
+  <section class="slide s-numbers on-pale" aria-label="Cifre" data-seconds="10">
+    <svg class="leafbg tl" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="col-text">
+      <h2 class="anim">Rootine în cifre</h2>
+      <p class="soft anim d1">Doar numere pe care le putem dovedi.</p>
+    </div>
+    <div class="rows">
+      <div class="row anim d1"><b>13</b><span>clase în Demo 1, la tomate și cartofi</span></div>
+      <div class="row anim d2"><b>38</b><span>clase în plan, tot setul PlantVillage</span></div>
+      <div class="row anim d3"><b>8</b><span>oameni în echipă</span></div>
+    </div>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Ce înseamnă fiecare cifră</li></ul></aside>
+  </section>
+
+  <!-- TYPE 5: flow. Boxes joined by arrows: .stack (vertical, below) or an inline svg.diagram (see demo-1, backend slide). -->
+  <section class="slide s-flow on-bark" aria-label="Flux" data-seconds="15">
+    <svg class="leafbg r" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="col-text">
+      <h2 class="anim">De la poză la diagnostic.</h2>
+      <p class="soft anim d1">Trei pași, fiecare cu rolul lui.</p>
+      <div class="chips anim d2"><span class="chip ok">Risc scăzut</span><span class="chip warn">Risc mediu</span><span class="chip bad">Risc ridicat</span></div>
+    </div>
+    <div class="stack">
+      <div class="step anim d1"><b>Aplicația</b>trimite poza și parcela</div>
+      <div class="down"></div>
+      <div class="step anim d2"><b>Backend-ul</b>cheamă AI service</div>
+      <div class="down"></div>
+      <div class="step end anim d3"><b>Diagnosticul</b>cele 3 boli cele mai probabile</div>
+    </div>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Cine cheamă pe cine</li></ul></aside>
+  </section>
+
+  <!-- TYPE 6: divider. One word, about 2 seconds. The cut to a screen recording. -->
+  <section class="slide s-divider on-green" aria-label="Demo" data-seconds="2">
+    <svg class="leafbg br" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="brand"><svg><use href="#leaf"/></svg><span>Rootine</span></div>
+    <h2 class="anim">Demo</h2>
+  </section>
+
+  <!-- TYPE 7: closing. A short heading and at most 5 list items. The leaf is the bullet. -->
+  <section class="slide s-close on-bark" aria-label="Final" data-seconds="45">
+    <svg class="leafbg br" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="col-text">
+      <h2 class="anim">Pașii următori</h2>
+      <ul class="anim d1">
+        <li>Primul pas, într-o propoziție scurtă</li>
+        <li>Al doilea pas</li>
+        <li>Al treilea pas</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+<div class="counter" aria-live="polite"></div>
+<script src="deck.js"></script>
+</body>
+</html>
