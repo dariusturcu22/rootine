@@ -4,7 +4,9 @@
       "enabled": false,
       "diagnosis_supported": true,
       "support_level": "lab_only",
-      "weather_rules": []
+      "weather_rules": [
+        "mills"
+      ]
     },
     "blueberry": {
       "enabled": false,
@@ -54,7 +56,9 @@
       "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
-      "weather_rules": ["hutton"]
+      "weather_rules": [
+        "hutton"
+      ]
     },
     "raspberry": {
       "enabled": false,
@@ -87,7 +91,10 @@
       "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
-      "weather_rules": ["hutton", "tomcast"]
+      "weather_rules": [
+        "hutton",
+        "tomcast"
+      ]
     }
   }
 }

@@ -8,7 +8,7 @@ from app.config import Settings
 from app.main import create_app
 from app.weather.daily_summary import DailySummary, summarize_days
 from app.weather.open_meteo_client import OpenMeteoClient
-from app.weather.rules import hutton, tomcast
+from app.weather.rules import hutton, mills, tomcast
 from tests.conftest import MODEL_DIR
 
 
@@ -204,3 +204,84 @@ def test_live_risk_endpoint_computes_real_hutton_and_tomcast():
     models_used = {d["model"] for d in body["diseases"]}
     assert models_used == {"hutton", "tomcast"}
     assert "Mock response" not in body["reason"]
+
+
+def test_mills_daily_severity_brackets():
+    assert mills.daily_mills_severity(None, 20) == 0
+    assert mills.daily_mills_severity(1.5, 24) == 0
+    assert mills.daily_mills_severity(27.0, 24) == 0
+    # 6-8 C requires >= 15h light, >= 20h moderate, >= 30h heavy
+    assert mills.daily_mills_severity(7.0, 14) == 0
+    assert mills.daily_mills_severity(7.0, 16) == 1
+    assert mills.daily_mills_severity(7.0, 20) == 2
+    assert mills.daily_mills_severity(7.0, 30) == 3
+    # Optimal 16-24 C requires >= 9h light, >= 12h moderate, >= 18h heavy
+    assert mills.daily_mills_severity(18.0, 8) == 0
+    assert mills.daily_mills_severity(18.0, 9) == 1
+    assert mills.daily_mills_severity(18.0, 12) == 2
+    assert mills.daily_mills_severity(18.0, 18) == 3
+
+
+def test_mills_assess_low_medium_high():
+    # Cold / short wet spells -> low
+    low_days = [
+        _make_day(0, min_temp_c=4.0, wet_hours_count=5, mean_wet_temp=7.0),
+        _make_day(1, min_temp_c=10.0, wet_hours_count=6, mean_wet_temp=18.0),
+    ]
+    low_res = mills.assess(low_days)
+    assert low_res.level == "low"
+    assert low_res.risk_index < 40
+
+    # Borderline single light/moderate infection spell (10h at 18 C) -> medium
+    med_days = [
+        _make_day(0, min_temp_c=14.0, wet_hours_count=10, mean_wet_temp=18.0),
+        _make_day(1, min_temp_c=12.0, wet_hours_count=2, mean_wet_temp=15.0),
+    ]
+    med_res = mills.assess(med_days)
+    assert med_res.level == "medium"
+    assert 40 <= med_res.risk_index < 75
+
+    # Prolonged warm wet spell (19h continuous at 19 C) -> high
+    high_days = [
+        _make_day(0, min_temp_c=15.0, wet_hours_count=19, mean_wet_temp=19.0),
+        _make_day(1, min_temp_c=14.0, wet_hours_count=12, mean_wet_temp=18.0),
+    ]
+    high_res = mills.assess(high_days)
+    assert high_res.level == "high"
+    assert high_res.risk_index >= 75
+
+
+def test_live_risk_endpoint_computes_real_mills_for_apple():
+    times = [f"2026-06-{10 + d:02d}T{h:02d}:00" for d in range(2) for h in range(24)]
+    hourly_payload = {
+        "hourly": {
+            "time": times,
+            "temperature_2m": [19.0] * len(times),
+            "relative_humidity_2m": [94.0] * len(times),
+            "precipitation": [0.4] * len(times),
+        }
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=hourly_payload)
+
+    settings = Settings(ai_mock=True, model_dir=MODEL_DIR)
+    app = create_app(settings)
+    with TestClient(app) as client:
+        app.state.mock = False
+        app.state.weather_client = OpenMeteoClient(
+            http=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+            retry_delay=0.0,
+        )
+        res = client.post(
+            "/v1/risk",
+            json={"latitude": 46.77, "longitude": 23.59, "crop": "apple"},
+        )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["crop"] == "apple"
+    assert body["level"] == "high"
+    assert body["risk_index"] >= 75
+    assert [d["model"] for d in body["diseases"]] == ["mills"]
+    assert [d["disease"] for d in body["diseases"]] == ["apple_scab"]

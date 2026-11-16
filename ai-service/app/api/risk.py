@@ -75,7 +75,7 @@ async def risk(body: RiskRequest, request: Request) -> RiskResponse:
     state = request.app.state
     config = state.crops.get(body.crop)
 
-    if not (config and config.enabled and config.weather_rules):
+    if not (config and config.weather_rules):
         reason = (
             "Mock response: no weather model exists for this crop."
             if state.mock
