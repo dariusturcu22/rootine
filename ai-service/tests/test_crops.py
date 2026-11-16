@@ -39,8 +39,7 @@ def test_crops_json_weather_rules_match_labels_csv():
     for crop, config in crops_config.items():
         if crop not in rules_by_crop:
             assert config["weather_rules"] == [], (
-                f"{crop}: has weather_rules in crops.json but no weather_rule "
-                f"in labels.csv"
+                f"{crop}: has weather_rules in crops.json but no weather_rule in labels.csv"
             )
 
 
@@ -73,11 +72,22 @@ def test_multiclass_crops_in_labels_csv_are_enabled():
     single_class_crops = set(classes_by_crop) - multi_class_crops
 
     assert multi_class_crops == {
-        "apple", "cherry", "corn", "grape", "peach",
-        "pepper", "potato", "strawberry", "tomato",
+        "apple",
+        "cherry",
+        "corn",
+        "grape",
+        "peach",
+        "pepper",
+        "potato",
+        "strawberry",
+        "tomato",
     }
     assert single_class_crops == {
-        "blueberry", "orange", "raspberry", "soybean", "squash",
+        "blueberry",
+        "orange",
+        "raspberry",
+        "soybean",
+        "squash",
     }
 
     for crop in multi_class_crops:
