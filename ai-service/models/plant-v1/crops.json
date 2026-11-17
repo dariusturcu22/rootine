@@ -1,7 +1,7 @@
 {
   "crops": {
     "apple": {
-      "enabled": false,
+      "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
       "weather_rules": [
@@ -12,23 +12,23 @@
       "enabled": false,
       "diagnosis_supported": false,
       "reason": "single_class_in_plantvillage",
-      "support_level": "unsupported",
+      "support_level": "not_supported",
       "weather_rules": []
     },
     "cherry": {
-      "enabled": false,
+      "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
       "weather_rules": []
     },
     "corn": {
-      "enabled": false,
+      "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
       "weather_rules": []
     },
     "grape": {
-      "enabled": false,
+      "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
       "weather_rules": []
@@ -37,17 +37,17 @@
       "enabled": false,
       "diagnosis_supported": false,
       "reason": "single_class_in_plantvillage",
-      "support_level": "unsupported",
+      "support_level": "not_supported",
       "weather_rules": []
     },
     "peach": {
-      "enabled": false,
+      "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
       "weather_rules": []
     },
     "pepper": {
-      "enabled": false,
+      "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
       "weather_rules": []
@@ -64,25 +64,25 @@
       "enabled": false,
       "diagnosis_supported": false,
       "reason": "single_class_in_plantvillage",
-      "support_level": "unsupported",
+      "support_level": "not_supported",
       "weather_rules": []
     },
     "soybean": {
       "enabled": false,
       "diagnosis_supported": false,
       "reason": "single_class_in_plantvillage",
-      "support_level": "unsupported",
+      "support_level": "not_supported",
       "weather_rules": []
     },
     "squash": {
       "enabled": false,
       "diagnosis_supported": false,
       "reason": "single_class_in_plantvillage",
-      "support_level": "unsupported",
+      "support_level": "not_supported",
       "weather_rules": []
     },
     "strawberry": {
-      "enabled": false,
+      "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
       "weather_rules": []

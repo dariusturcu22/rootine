@@ -1,37 +1,101 @@
-def test_crops_lists_enabled_crops_with_classes(client):
-    response = client.get("/v1/crops")
+import csv
+import json
+from collections import defaultdict
+from pathlib import Path
 
-    assert response.status_code == 200
-    crops = {c["crop"]: c for c in response.json()}
+LABELS_PATH = Path(__file__).parent.parent / "models" / "plant-v1" / "labels.csv"
+CROPS_PATH = Path(__file__).parent.parent / "models" / "plant-v1" / "crops.json"
 
-    assert set(crops) == {"potato", "tomato"}
 
-    assert len(crops["tomato"]["classes"]) == 10
-    assert len(crops["potato"]["classes"]) == 3
+def _load_crops_config():
+    with open(CROPS_PATH) as f:
+        return json.load(f)["crops"]
 
-    assert crops["tomato"]["diagnosis_supported"] is True
-    assert crops["tomato"]["weather_supported"] is True
-    assert crops["tomato"]["support_level"] == "lab_only"
-    assert crops["tomato"]["weather_rules"] == ["hutton", "tomcast"]
 
-    assert crops["potato"]["diagnosis_supported"] is True
-    assert crops["potato"]["weather_supported"] is True
+def _load_labels_rows():
+    with open(LABELS_PATH) as f:
+        return list(csv.DictReader(f))
 
-    assert set(crops["tomato"]["classes"]) == {
-        "bacterial_spot",
-        "early_blight",
-        "late_blight",
-        "leaf_mold",
-        "septoria_leaf_spot",
-        "spider_mites two-spotted_spider_mite",
-        "target_spot",
-        "tomato_yellow_leaf_curl_virus",
-        "tomato_mosaic_virus",
-        "healthy",
+
+def test_crops_json_weather_rules_match_labels_csv():
+    """crops.json weather_rules for each crop must match the distinct,
+    non-'none' weather_rule values for that crop in labels.csv."""
+    rows = _load_labels_rows()
+    crops_config = _load_crops_config()
+
+    rules_by_crop = defaultdict(set)
+    for row in rows:
+        rule = row["weather_rule"]
+        if rule and rule != "none":
+            rules_by_crop[row["crop"]].add(rule)
+
+    for crop, rules in rules_by_crop.items():
+        configured = set(crops_config[crop]["weather_rules"])
+        assert configured == rules, (
+            f"{crop}: crops.json weather_rules={configured} "
+            f"!= labels.csv weather_rule values={rules}"
+        )
+
+    for crop, config in crops_config.items():
+        if crop not in rules_by_crop:
+            assert config["weather_rules"] == [], (
+                f"{crop}: has weather_rules in crops.json but no weather_rule in labels.csv"
+            )
+
+
+def test_unused_weather_rules_are_not_referenced():
+    """mills, spotts, and gubler_thomas don't appear in labels.csv, so no
+    crop in crops.json should reference them."""
+    rows = _load_labels_rows()
+    rules_in_csv = {row["weather_rule"] for row in rows} - {"none", ""}
+    assert rules_in_csv == {"hutton", "mills", "tomcast"}
+
+    crops_config = _load_crops_config()
+    unused_rules = {"spotts", "gubler_thomas"}
+    for crop, config in crops_config.items():
+        assert unused_rules.isdisjoint(config["weather_rules"]), (
+            f"{crop} references a weather rule not present in labels.csv"
+        )
+
+
+def test_multiclass_crops_in_labels_csv_are_enabled():
+    """All 9 crops with >1 class in labels.csv should be enabled +
+    diagnosis_supported in crops.json; single-class crops should not."""
+    rows = _load_labels_rows()
+    crops_config = _load_crops_config()
+
+    classes_by_crop = defaultdict(set)
+    for row in rows:
+        classes_by_crop[row["crop"]].add(row["disease"])
+
+    multi_class_crops = {c for c, d in classes_by_crop.items() if len(d) > 1}
+    single_class_crops = set(classes_by_crop) - multi_class_crops
+
+    assert multi_class_crops == {
+        "apple",
+        "cherry",
+        "corn",
+        "grape",
+        "peach",
+        "pepper",
+        "potato",
+        "strawberry",
+        "tomato",
+    }
+    assert single_class_crops == {
+        "blueberry",
+        "orange",
+        "raspberry",
+        "soybean",
+        "squash",
     }
 
-    assert set(crops["potato"]["classes"]) == {
-        "early_blight",
-        "late_blight",
-        "healthy",
-    }
+    for crop in multi_class_crops:
+        assert crops_config[crop]["enabled"] is True
+        assert crops_config[crop]["diagnosis_supported"] is True
+        assert crops_config[crop]["support_level"] == "lab_only"
+
+    for crop in single_class_crops:
+        assert crops_config[crop]["enabled"] is False
+        assert crops_config[crop]["diagnosis_supported"] is False
+        assert crops_config[crop]["support_level"] == "not_supported"
