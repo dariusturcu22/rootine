@@ -10,7 +10,7 @@ class_id,demo1_id,crop,disease,eppo_code,weather_rule,source_dataset,license
 8,,corn,common_rust,PUCCSO,none,mohanty/PlantVillage,CC BY-SA 3.0
 9,,corn,northern_leaf_blight,SETOTU,none,mohanty/PlantVillage,CC BY-SA 3.0
 10,,corn,healthy,,none,mohanty/PlantVillage,CC BY-SA 3.0
-11,,grape,black_rot,GUIGBI,none,mohanty/PlantVillage,CC BY-SA 3.0
+11,,grape,black_rot,GUIGBI,spotts,mohanty/PlantVillage,CC BY-SA 3.0
 12,,grape,esca_black_measles,,none,mohanty/PlantVillage,CC BY-SA 3.0
 13,,grape,leaf_blight_isariopsis_leaf_spot,,none,mohanty/PlantVillage,CC BY-SA 3.0
 14,,grape,healthy,,none,mohanty/PlantVillage,CC BY-SA 3.0

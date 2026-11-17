@@ -44,14 +44,14 @@ def test_crops_json_weather_rules_match_labels_csv():
 
 
 def test_unused_weather_rules_are_not_referenced():
-    """mills, spotts, and gubler_thomas don't appear in labels.csv, so no
+    """gubler_thomas does not appear don't appear in labels.csv, so no
     crop in crops.json should reference them."""
     rows = _load_labels_rows()
     rules_in_csv = {row["weather_rule"] for row in rows} - {"none", ""}
-    assert rules_in_csv == {"hutton", "mills", "tomcast"}
+    assert rules_in_csv == {"hutton", "mills", "spotts", "tomcast"}
 
     crops_config = _load_crops_config()
-    unused_rules = {"spotts", "gubler_thomas"}
+    unused_rules = {"gubler_thomas"}
     for crop, config in crops_config.items():
         assert unused_rules.isdisjoint(config["weather_rules"]), (
             f"{crop} references a weather rule not present in labels.csv"
