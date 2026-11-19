@@ -1,7 +1,7 @@
 {
   "model_version": "plant-v1",
-  "release_tag": "v0.1.0-demo1-38c",
-  "sha256": "6c8c4abe04d06e424ecd08cda2bea656c121e4d90ead4b2f09932bccbc13c0e5",
+  "release_tag": "v0.1.0-demo1",
+  "sha256": "a26fd1e2ebc956d5828d1b2b22aa7e3c859876ec4d6ae4be04f2b419445acca4",
   "architecture": "mobilenet_v3_large",
   "model_file": "model.onnx",
   "input_size": 224,
