@@ -1,0 +1,40 @@
+| Class | Precision | Recall | F1 | Support |
+|---|---|---|---|---|
+| Apple___Apple_scab | 1.000 | 1.000 | 1.000 | 84 |
+| Apple___Black_rot | 1.000 | 1.000 | 1.000 | 106 |
+| Apple___Cedar_apple_rust | 1.000 | 1.000 | 1.000 | 40 |
+| Apple___healthy | 1.000 | 0.996 | 0.998 | 241 |
+| Blueberry___healthy | 0.997 | 1.000 | 0.998 | 303 |
+| Cherry_(including_sour)___Powdery_mildew | 1.000 | 1.000 | 1.000 | 142 |
+| Cherry_(including_sour)___healthy | 1.000 | 1.000 | 1.000 | 116 |
+| Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot | 0.958 | 0.944 | 0.951 | 72 |
+| Corn_(maize)___Common_rust_ | 1.000 | 1.000 | 1.000 | 180 |
+| Corn_(maize)___Northern_Leaf_Blight | 0.972 | 0.979 | 0.976 | 143 |
+| Corn_(maize)___healthy | 1.000 | 1.000 | 1.000 | 177 |
+| Grape___Black_rot | 1.000 | 1.000 | 1.000 | 192 |
+| Grape___Esca_(Black_Measles) | 1.000 | 1.000 | 1.000 | 164 |
+| Grape___Leaf_blight_(Isariopsis_Leaf_Spot) | 1.000 | 1.000 | 1.000 | 168 |
+| Grape___healthy | 1.000 | 1.000 | 1.000 | 71 |
+| Orange___Haunglongbing_(Citrus_greening) | 1.000 | 1.000 | 1.000 | 643 |
+| Peach___Bacterial_spot | 1.000 | 1.000 | 1.000 | 423 |
+| Peach___healthy | 1.000 | 1.000 | 1.000 | 76 |
+| Pepper,_bell___Bacterial_spot | 0.976 | 1.000 | 0.988 | 124 |
+| Pepper,_bell___healthy | 1.000 | 0.987 | 0.993 | 303 |
+| Potato___Early_blight | 1.000 | 1.000 | 1.000 | 148 |
+| Potato___Late_blight | 1.000 | 1.000 | 1.000 | 144 |
+| Potato___healthy | 0.970 | 1.000 | 0.985 | 32 |
+| Raspberry___healthy | 1.000 | 1.000 | 1.000 | 88 |
+| Soybean___healthy | 0.999 | 1.000 | 0.999 | 674 |
+| Squash___Powdery_mildew | 1.000 | 1.000 | 1.000 | 306 |
+| Strawberry___Leaf_scorch | 1.000 | 1.000 | 1.000 | 232 |
+| Strawberry___healthy | 1.000 | 1.000 | 1.000 | 52 |
+| Tomato___Bacterial_spot | 0.997 | 1.000 | 0.999 | 343 |
+| Tomato___Early_blight | 0.978 | 1.000 | 0.989 | 136 |
+| Tomato___Late_blight | 0.993 | 1.000 | 0.997 | 285 |
+| Tomato___Leaf_Mold | 1.000 | 1.000 | 1.000 | 124 |
+| Tomato___Septoria_leaf_spot | 1.000 | 0.986 | 0.993 | 279 |
+| Tomato___Spider_mites Two-spotted_spider_mite | 0.997 | 0.986 | 0.992 | 296 |
+| Tomato___Target_Spot | 0.991 | 0.995 | 0.993 | 213 |
+| Tomato___Tomato_Yellow_Leaf_Curl_Virus | 1.000 | 1.000 | 1.000 | 766 |
+| Tomato___Tomato_mosaic_virus | 1.000 | 1.000 | 1.000 | 48 |
+| Tomato___healthy | 1.000 | 0.996 | 0.998 | 250 |
