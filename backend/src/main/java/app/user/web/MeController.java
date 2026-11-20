@@ -1,10 +1,9 @@
 package app.user.web;
 
-import static app.common.error.EndpointStub.notImplemented;
-
 import app.common.config.OpenApiConfig;
 import app.common.error.ProblemDetailResponse;
 import app.user.dto.UserResponse;
+import app.user.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -12,22 +11,26 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.UUID;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * The current user. Needs a valid token.
- *
- * <p>Published for the API contract but not implemented yet, so the call returns 501 with a Problem
- * Details body.
- */
+/** The current user. Needs a valid token. */
 @RestController
 @Tag(name = "Auth", description = "Registration and login.")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH_SCHEME_NAME)
 public class MeController {
 
   private static final String PROBLEM_JSON = ProblemDetailResponse.MEDIA_TYPE;
+
+  private final AuthService authService;
+
+  public MeController(AuthService authService) {
+    this.authService = authService;
+  }
 
   @Operation(
       summary = "Get the current user",
@@ -43,17 +46,10 @@ public class MeController {
         content =
             @Content(
                 mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @GetMapping(path = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
-  public UserResponse getCurrentUser() {
-    throw notImplemented();
+  public UserResponse getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
+    return authService.getCurrentUser(UUID.fromString(jwt.getSubject()));
   }
 }

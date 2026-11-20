@@ -1,12 +1,11 @@
 package app.user.web;
 
-import static app.common.error.EndpointStub.notImplemented;
-
 import app.common.error.ProblemDetailResponse;
 import app.user.dto.LoginRequest;
 import app.user.dto.LoginResponse;
 import app.user.dto.RegisterRequest;
 import app.user.dto.UserResponse;
+import app.user.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,18 +21,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * Registration and login. These are the only endpoints that do not need a token.
- *
- * <p>The endpoints are published for the API contract but not implemented yet, so every call
- * returns 501 with a Problem Details body.
- */
+/** Registration and login. These are the only endpoints that do not need a token. */
 @RestController
 @RequestMapping(path = "/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "Auth", description = "Registration and login.")
 public class AuthController {
 
   private static final String PROBLEM_JSON = ProblemDetailResponse.MEDIA_TYPE;
+
+  private final AuthService authService;
+
+  public AuthController(AuthService authService) {
+    this.authService = authService;
+  }
 
   @Operation(
       summary = "Register a new account",
@@ -56,19 +56,12 @@ public class AuthController {
         content =
             @Content(
                 mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @PostMapping(path = "/register", consumes = MediaType.APPLICATION_JSON_VALUE)
   @ResponseStatus(HttpStatus.CREATED)
   public UserResponse register(@Valid @RequestBody RegisterRequest registerRequest) {
-    throw notImplemented();
+    return authService.register(registerRequest);
   }
 
   @Operation(
@@ -92,17 +85,10 @@ public class AuthController {
         content =
             @Content(
                 mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @PostMapping(path = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
   public LoginResponse login(@Valid @RequestBody LoginRequest loginRequest) {
-    throw notImplemented();
+    return authService.login(loginRequest);
   }
 }

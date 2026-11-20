@@ -6,7 +6,7 @@ import app.user.repository.UserRepository;
 import java.time.Instant;
 import java.util.UUID;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -26,10 +26,13 @@ public class DemoTokenService {
 
   private final UserRepository userRepository;
   private final JwtEncoder jwtEncoder;
+  private final PasswordEncoder passwordEncoder;
 
-  public DemoTokenService(UserRepository userRepository, JwtEncoder jwtEncoder) {
+  public DemoTokenService(
+      UserRepository userRepository, JwtEncoder jwtEncoder, PasswordEncoder passwordEncoder) {
     this.userRepository = userRepository;
     this.jwtEncoder = jwtEncoder;
+    this.passwordEncoder = passwordEncoder;
   }
 
   @Transactional
@@ -58,7 +61,7 @@ public class DemoTokenService {
                     new UserAccount(
                         DEMO_USER_ID,
                         DEMO_EMAIL,
-                        new BCryptPasswordEncoder().encode(UUID.randomUUID().toString()),
+                        passwordEncoder.encode(UUID.randomUUID().toString()),
                         Instant.now())));
   }
 }

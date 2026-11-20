@@ -8,6 +8,7 @@ import app.aiclient.AiServiceClient;
 import app.diagnosis.service.DiagnosisService;
 import app.parcel.service.ParcelService;
 import app.risk.service.RiskService;
+import app.user.service.AuthService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,6 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 class DemoTokenDisabledTest {
 
   @Autowired private MockMvc mockMvc;
+  @MockitoBean private AuthService authService;
   @MockitoBean private AiServiceClient aiServiceClient;
   @MockitoBean private DiagnosisService diagnosisService;
   @MockitoBean private ParcelService parcelService;
