@@ -2,3 +2,7 @@ app:
   jwt:
     secret: test-only-secret-that-is-at-least-32-bytes-long
   upload-dir: target/test-uploads
+  risk-refresh:
+    # Do not fire the scheduled refresh during tests; call the service directly instead.
+    enabled: false
+    cron: "-"
