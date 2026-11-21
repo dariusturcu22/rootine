@@ -17,6 +17,7 @@ import app.diagnosis.dto.DiagnosisStatus;
 import app.diagnosis.dto.Prediction;
 import app.diagnosis.service.DiagnosisService;
 import app.parcel.service.ParcelService;
+import app.risk.service.RiskRefreshService;
 import app.risk.service.RiskService;
 import app.user.service.AuthService;
 import java.time.Instant;
@@ -43,7 +44,8 @@ import org.springframework.web.multipart.MultipartFile;
           + "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration,"
           + "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration,"
           + "org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration,"
-          + "org.springframework.boot.mail.autoconfigure.MailSenderAutoConfiguration"
+          + "org.springframework.boot.mail.autoconfigure.MailSenderAutoConfiguration",
+      "app.risk-refresh.enabled=false"
     })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -58,6 +60,7 @@ class DiagnosisControllerTest {
   @MockitoBean private ParcelService parcelService;
   @MockitoBean private RiskService riskService;
   @MockitoBean private AuthService authService;
+  @MockitoBean private RiskRefreshService riskRefreshService;
 
   @Test
   void postsMultipartImageAndParcelId() throws Exception {
