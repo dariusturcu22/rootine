@@ -23,9 +23,6 @@ public record RiskResponse(
     @Schema(example = "potato") String crop,
     RiskLevel level,
     @Schema(example = "42") int riskIndex,
-    @Schema(
-            example =
-                "Mock response: fixed medium risk, real weather rules are not implemented yet.")
-        String reason,
+    @Schema(example = "Conditions favor late blight.") String reason,
     List<DiseaseRisk> diseases,
     @Schema(example = "2026-11-01T06:00:00Z") Instant generatedAt) {}

@@ -14,6 +14,25 @@ interface ImageUploadProps {
   onResultChange: (hasResult: boolean) => void
 }
 
+const diagnosisStatusDetails: Record<Diagnosis['status'], { label: string; message: string }> = {
+  confident: {
+    label: 'Likely diagnosis',
+    message: 'Review the predictions below; they are model estimates, not a confirmed diagnosis.',
+  },
+  unsure: {
+    label: 'Uncertain result',
+    message: 'The model is unsure. Try a clear, well-lit close-up of a single leaf.',
+  },
+  invalid_image: {
+    label: 'Photo could not be analyzed',
+    message: 'Upload a clear JPEG or PNG photo showing a single leaf.',
+  },
+  crop_not_supported: {
+    label: 'Crop not supported',
+    message: 'Diagnosis is not available for this crop yet. Demo 1 supports tomato and potato.',
+  },
+}
+
 export function ImageUpload({ parcelId, parcelName, onResultChange }: ImageUploadProps) {
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -181,12 +200,18 @@ export function ImageUpload({ parcelId, parcelName, onResultChange }: ImageUploa
               <p className="result-parcel">
                 Analyzed leaf from <strong>{parcelName}</strong>
               </p>
-              <span className="result-crop">{diagnosis.crop}</span>
+              <span className="result-crop">{diagnosis.crop ?? 'Crop not identified'}</span>
               <span className={`result-status result-status-${diagnosis.status}`}>
-                {diagnosis.status.replaceAll('_', ' ')}
+                {diagnosisStatusDetails[diagnosis.status].label}
               </span>
+              <p className={`diagnosis-guidance diagnosis-guidance-${diagnosis.status}`}>
+                {diagnosisStatusDetails[diagnosis.status].message}
+              </p>
               {diagnosis.cropCheck === 'mismatch' && (
-                <p className="result-note">The photo may not match the selected crop.</p>
+                <p className="result-note">
+                  This photo does not appear to match the crop selected for this parcel. Check the
+                  parcel selection or upload a leaf photo of the selected crop.
+                </p>
               )}
             </div>
           </div>

@@ -12,7 +12,7 @@ import java.util.List;
  * column on the entity, not here.
  *
  * @param status the outcome of the diagnosis
- * @param crop the crop used
+ * @param crop the crop used, or {@code null} when the AI service could not determine it
  * @param cropCheck whether the photo's crop matched the parcel's crop, or {@code null} when no
  *     check was possible
  * @param topPredictions the predictions; empty for {@code invalid_image} or {@code

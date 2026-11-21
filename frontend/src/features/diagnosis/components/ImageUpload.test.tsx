@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ComponentProps } from 'react'
-import { createDiagnosis } from '../../../lib/apiClient'
+import { createDiagnosis, type Diagnosis } from '../../../lib/apiClient'
 import { ImageUpload } from './ImageUpload'
 
 vi.mock('../../../lib/apiClient', async () => {
@@ -95,6 +95,7 @@ describe('ImageUpload', () => {
     })
     expect(screen.getByText('early blight')).toBeInTheDocument()
     expect(screen.getByText(/Analyzed leaf from/)).toHaveTextContent('North field')
+    expect(screen.getByText('Likely diagnosis')).toBeInTheDocument()
     expect(screen.getByRole('progressbar', { name: 'early blight confidence' })).toHaveAttribute(
       'aria-valuenow',
       '92',
@@ -169,5 +170,76 @@ describe('ImageUpload', () => {
     expect(screen.queryByRole('heading', { name: 'Most likely diseases' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Submit for diagnosis' })).toBeDisabled()
     expect(onResultChange).toHaveBeenLastCalledWith(false)
+  })
+})
+
+describe('diagnosis feedback', () => {
+  it.each([
+    {
+      status: 'unsure',
+      message: 'The model is unsure. Try a clear, well-lit close-up of a single leaf.',
+    },
+    {
+      status: 'invalid_image',
+      message: 'Upload a clear JPEG or PNG photo showing a single leaf.',
+    },
+    {
+      status: 'crop_not_supported',
+      message: 'Diagnosis is not available for this crop yet. Demo 1 supports tomato and potato.',
+    },
+  ] satisfies Array<{ status: Diagnosis['status']; message: string }>)(
+    'explains the $status result and handles a missing crop',
+    async ({ status, message }) => {
+      const user = userEvent.setup()
+      vi.mocked(createDiagnosis).mockResolvedValue({
+        id: 'diagnosis-status',
+        parcelId: 'parcel-1',
+        status,
+        crop: null,
+        cropCheck: null,
+        topPredictions: [],
+        supportLevel: 'not_supported',
+        modelVersion: 'plant-v1',
+        createdAt: '2026-11-02T17:00:00Z',
+      })
+
+      renderImageUpload()
+      await user.upload(
+        screen.getByLabelText(/Browse files or take a photo/),
+        new File(['leaf image'], 'leaf.png', { type: 'image/png' }),
+      )
+      await user.click(screen.getByRole('button', { name: 'Submit for diagnosis' }))
+
+      expect(await screen.findByText(message)).toBeInTheDocument()
+      expect(screen.getByText('Crop not identified')).toBeInTheDocument()
+    },
+  )
+
+  it('explains when the photo does not match the selected crop', async () => {
+    const user = userEvent.setup()
+    vi.mocked(createDiagnosis).mockResolvedValue({
+      id: 'diagnosis-mismatch',
+      parcelId: 'parcel-1',
+      status: 'confident',
+      crop: 'tomato',
+      cropCheck: 'mismatch',
+      topPredictions: [],
+      supportLevel: 'lab_only',
+      modelVersion: 'plant-v1',
+      createdAt: '2026-11-02T17:00:00Z',
+    })
+
+    renderImageUpload()
+    await user.upload(
+      screen.getByLabelText(/Browse files or take a photo/),
+      new File(['leaf image'], 'leaf.png', { type: 'image/png' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Submit for diagnosis' }))
+
+    expect(
+      await screen.findByText(
+        /This photo does not appear to match the crop selected for this parcel/,
+      ),
+    ).toBeInTheDocument()
   })
 })
