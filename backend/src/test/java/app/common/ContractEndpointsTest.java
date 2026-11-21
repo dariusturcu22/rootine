@@ -25,6 +25,7 @@ import app.risk.dto.RiskLevel;
 import app.risk.dto.RiskResponse;
 import app.risk.service.RiskService;
 import app.user.dto.LoginResponse;
+import app.user.service.AuthService;
 import app.user.service.DemoTokenService;
 import java.time.Instant;
 import java.util.List;
@@ -86,6 +87,7 @@ class ContractEndpointsTest {
           "/alerts/stream");
 
   @Autowired private MockMvc mockMvc;
+  @MockitoBean private AuthService authService;
   @MockitoBean private DiagnosisService diagnosisService;
   @MockitoBean private AiServiceClient aiServiceClient;
   @MockitoBean private ParcelService parcelService;

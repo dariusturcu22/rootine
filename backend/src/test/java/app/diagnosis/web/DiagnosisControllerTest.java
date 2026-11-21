@@ -18,6 +18,7 @@ import app.diagnosis.dto.Prediction;
 import app.diagnosis.service.DiagnosisService;
 import app.parcel.service.ParcelService;
 import app.risk.service.RiskService;
+import app.user.service.AuthService;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -56,6 +57,7 @@ class DiagnosisControllerTest {
   @MockitoBean private DiagnosisService diagnosisService;
   @MockitoBean private ParcelService parcelService;
   @MockitoBean private RiskService riskService;
+  @MockitoBean private AuthService authService;
 
   @Test
   void postsMultipartImageAndParcelId() throws Exception {
