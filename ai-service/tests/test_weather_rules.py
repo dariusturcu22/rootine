@@ -8,7 +8,7 @@ from app.config import Settings
 from app.main import create_app
 from app.weather.daily_summary import DailySummary, summarize_days
 from app.weather.open_meteo_client import OpenMeteoClient
-from app.weather.rules import hutton, mills, tomcast
+from app.weather.rules import hutton, mills, spotts, tomcast
 from tests.conftest import MODEL_DIR
 
 
@@ -285,3 +285,64 @@ def test_live_risk_endpoint_computes_real_mills_for_apple():
     assert body["risk_index"] >= 75
     assert [d["model"] for d in body["diseases"]] == ["mills"]
     assert [d["disease"] for d in body["diseases"]] == ["apple_scab"]
+
+
+def test_spotts_required_wet_hours():
+    assert spotts.required_wet_hours(9.0) == 999
+    assert spotts.required_wet_hours(10.0) == 24
+    assert spotts.required_wet_hours(14.0) == 12
+    assert spotts.required_wet_hours(16.0) == 9
+    assert spotts.required_wet_hours(19.0) == 8
+    assert spotts.required_wet_hours(22.0) == 6  # optimal
+    assert spotts.required_wet_hours(28.0) == 9
+    assert spotts.required_wet_hours(31.0) == 12
+    assert spotts.required_wet_hours(33.0) == 999
+
+
+def test_spotts_assess_levels():
+    # Low: 10 C but only 12h wet (needs 24h)
+    low_days = [_make_day(0, min_temp_c=8.0, wet_hours_count=12, mean_wet_temp=10.0)]
+    assert spotts.assess(low_days).level == "low"
+
+    # Medium: 22 C (optimal) for 6h wet (needs 6h) -> exactly 1 marginal event
+    med_days = [_make_day(0, min_temp_c=18.0, wet_hours_count=6, mean_wet_temp=22.0)]
+    assert spotts.assess(med_days).level == "medium"
+
+    # High: 22 C for 14h wet (needs 6h -> excess >= 6) -> High
+    high_days = [_make_day(0, min_temp_c=18.0, wet_hours_count=14, mean_wet_temp=22.0)]
+    assert spotts.assess(high_days).level == "high"
+
+
+def test_live_risk_endpoint_computes_spotts_with_85_rh_for_grape():
+    times = [f"2026-06-{10 + d:02d}T{h:02d}:00" for d in range(2) for h in range(24)]
+    # RH is 86%, which triggers Spotts (>=85%) but wouldn't trigger Hutton (>=90%)
+    hourly_payload = {
+        "hourly": {
+            "time": times,
+            "temperature_2m": [22.0] * len(times),
+            "relative_humidity_2m": [86.0] * len(times),
+            "precipitation": [0.0] * len(times),
+        }
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=hourly_payload)
+
+    settings = Settings(ai_mock=True, model_dir=MODEL_DIR)
+    app = create_app(settings)
+    with TestClient(app) as client:
+        app.state.mock = False
+        app.state.weather_client = OpenMeteoClient(
+            http=httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+            retry_delay=0.0,
+        )
+        res = client.post(
+            "/v1/risk",
+            json={"latitude": 46.77, "longitude": 23.59, "crop": "grape"},
+        )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["crop"] == "grape"
+    assert body["level"] == "high"  # 48 hours at 22C and 86% RH is massive excess
+    assert [d["model"] for d in body["diseases"]] == ["spotts"]

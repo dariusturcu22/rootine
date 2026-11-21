@@ -31,7 +31,9 @@
       "enabled": true,
       "diagnosis_supported": true,
       "support_level": "lab_only",
-      "weather_rules": []
+      "weather_rules": [
+        "spotts"
+      ]
     },
     "orange": {
       "enabled": false,
