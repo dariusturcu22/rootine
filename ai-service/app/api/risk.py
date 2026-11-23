@@ -38,11 +38,12 @@ def _format_reason(
 def _evaluate_crop_diseases(
     crop: str,
     labels: list,
-    allowed_rules: tuple[str, ...],
-    days: list[DailySummary],
+    allowed_rules: list[str],
+    hourly: dict,
 ) -> list[DiseaseRisk]:
     """Evaluate all diseases of a crop that have an active weather rule."""
     rule_cache: dict[str, RuleResult] = {}
+    days_cache: dict[float, list[DailySummary]] = {}
     results: list[DiseaseRisk] = []
     seen: set[tuple[str, str]] = set()
 
@@ -56,8 +57,13 @@ def _evaluate_crop_diseases(
             continue
         seen.add((label.disease, rule_name))
 
+        rh_threshold = 85.0 if rule_name == "spotts" else 90.0
+        if rh_threshold not in days_cache:
+            days_cache[rh_threshold] = summarize_days(hourly, rh_threshold=rh_threshold)
+
         if rule_name not in rule_cache:
-            rule_cache[rule_name] = WEATHER_RULES[rule_name](days)
+            rule_cache[rule_name] = WEATHER_RULES[rule_name](days_cache[rh_threshold])
+
         res = rule_cache[rule_name]
         results.append(
             DiseaseRisk(
@@ -114,8 +120,7 @@ async def risk(body: RiskRequest, request: Request) -> RiskResponse:
             detail=f"Failed to fetch weather data from Open-Meteo: {exc}",
         ) from exc
 
-    days = summarize_days(hourly)
-    diseases = _evaluate_crop_diseases(body.crop, state.labels, config.weather_rules, days)
+    diseases = _evaluate_crop_diseases(body.crop, state.labels, config.weather_rules, hourly)
 
     if not diseases:
         return RiskResponse(
@@ -134,7 +139,7 @@ async def risk(body: RiskRequest, request: Request) -> RiskResponse:
         crop=body.crop,
         level=overall_level,
         risk_index=overall_index,
-        reason=_format_reason(body.crop, overall_level, diseases, len(days)),
+        reason=_format_reason(body.crop, overall_level, diseases, 14),
         diseases=diseases,
         generated_at=datetime.now(UTC),
     )
