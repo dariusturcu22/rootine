@@ -37,7 +37,12 @@ ai-service/training/datasets/*
 !ai-service/training/datasets/.gitkeep
 ai-service/models/**/model.onnx
 training/datasets/images/
-outputs
+gradcam
+**/outputs_*/classes.json
+**/outputs_*/history.json
+**/outputs_*/onnx_check.json
+**/outputs_*/confusion_matrix.csv
+
 
 # IDEs and OS
 .idea/

@@ -23,8 +23,10 @@ import app.parcel.service.ParcelService;
 import app.risk.dto.DiseaseRisk;
 import app.risk.dto.RiskLevel;
 import app.risk.dto.RiskResponse;
+import app.risk.service.RiskRefreshService;
 import app.risk.service.RiskService;
 import app.user.dto.LoginResponse;
+import app.user.service.AuthService;
 import app.user.service.DemoTokenService;
 import java.time.Instant;
 import java.util.List;
@@ -49,7 +51,8 @@ import org.springframework.test.web.servlet.MockMvc;
     classes = Application.class,
     properties = {
       "spring.autoconfigure.exclude=" + ContractEndpointsTest.EXCLUDED_AUTOCONFIG,
-      "app.demo-token.enabled=true"
+      "app.demo-token.enabled=true",
+      "app.risk-refresh.enabled=false"
     })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -86,10 +89,12 @@ class ContractEndpointsTest {
           "/alerts/stream");
 
   @Autowired private MockMvc mockMvc;
+  @MockitoBean private AuthService authService;
   @MockitoBean private DiagnosisService diagnosisService;
   @MockitoBean private AiServiceClient aiServiceClient;
   @MockitoBean private ParcelService parcelService;
   @MockitoBean private RiskService riskService;
+  @MockitoBean private RiskRefreshService riskRefreshService;
   @MockitoBean private DemoTokenService demoTokenService;
 
   @Test

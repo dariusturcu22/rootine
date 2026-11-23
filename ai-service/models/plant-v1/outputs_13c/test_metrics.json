@@ -1,0 +1,7 @@
+{
+  "test_accuracy": 0.9967362924281984,
+  "test_macro_f1": 0.9967399849904475,
+  "num_classes": 13,
+  "num_test_images": 3064,
+  "device": "cpu"
+}

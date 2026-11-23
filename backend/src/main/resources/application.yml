@@ -43,6 +43,11 @@ app:
     secret: ${JWT_SECRET:}
   demo-token:
     enabled: ${DEMO_TOKEN_ENABLED:false}
+  risk-refresh:
+    # Daily weather-risk refresh. Schedule is configuration, not business logic.
+    enabled: ${RISK_REFRESH_ENABLED:true}
+    cron: ${RISK_REFRESH_CRON:0 0 6 * * *}
+    zone: ${RISK_REFRESH_ZONE:UTC}
   upload-dir: ${UPLOAD_DIR:./uploads}
   ai-service-url: ${AI_SERVICE_URL:http://localhost:8000}
   ai-service-connect-timeout: ${AI_SERVICE_CONNECT_TIMEOUT:2s}
