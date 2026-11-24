@@ -181,7 +181,7 @@ export function getDiagnosis(id: string): Promise<Diagnosis> {
   return apiFetch<Diagnosis>(`/diagnoses/${id}`)
 }
 
-export async function openAlertStream(): Promise<Response> {
+export async function openAlertStream(signal?: AbortSignal): Promise<Response> {
   const headers = new Headers()
   const token = useAuthStore.getState().token
   if (token) {
@@ -189,7 +189,7 @@ export async function openAlertStream(): Promise<Response> {
   }
 
   const url = new URL(`${API_BASE_URL}/alerts/stream`, window.location.href)
-  const response = await fetch(url, { headers })
+  const response = await fetch(url, { headers, signal })
   if (!response.ok) {
     if (response.status === 401) {
       handleUnauthorized('/alerts/stream')
