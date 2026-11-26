@@ -8,11 +8,13 @@ evaluates the best checkpoint on the test split per class, and exports ONNX
 Run from the ai-service folder:
   python training/train.py --device cpu --max-per-class 30 --epochs 2    # smoke test
   python training/train.py --epochs 12 --device cuda                     # full run
+  python training/train.py --field-aug --epochs 12 --device cuda         # field-aug run
   python training/train.py --splits training/datasets/splits_all_38c.csv --expected-classes 38
 """
 
 import argparse
 import hashlib
+import io
 import json
 import random
 import sys
@@ -35,6 +37,9 @@ sys.path.insert(0, str(AI_SERVICE_DIR))
 from app.inference.preprocess import preprocess_image  # noqa: E402
 
 TRAINING_DIR = Path(__file__).resolve().parent
+sys.path.insert(0, str(TRAINING_DIR))
+from augmentations import FieldAugmentor, augment_image_bytes  # noqa: E402
+
 IMG_SIZE = 224
 MEAN = [0.485, 0.456, 0.406]
 STD = [0.229, 0.224, 0.225]
@@ -66,17 +71,48 @@ def detect_columns(df):
     return path_col, label_col, split_col
 
 
+def _sample_seed(base_seed: int, epoch: int, index: int) -> int:
+    """Derive a deterministic 32-bit seed from run seed, epoch, and sample index."""
+    payload = f"{base_seed}:{epoch}:{index}".encode("utf-8")
+    digest = hashlib.blake2b(payload, digest_size=4).digest()
+    return int.from_bytes(digest, byteorder="little")
+
+
 class LeafDataset(Dataset):
-    def __init__(self, df, data_root, path_col, augment=False):
+    def __init__(
+        self,
+        df,
+        data_root,
+        path_col,
+        augment=False,
+        field_augmentor: FieldAugmentor | None = None,
+        seed: int = 42,
+    ):
         self.paths = [Path(data_root) / p for p in df[path_col]]
         self.targets = df["target"].tolist()
         self.augment = augment
+        self.field_augmentor = field_augmentor
+        self.seed = seed
+        self.epoch = 0
+
+    def set_epoch(self, epoch: int) -> None:
+        self.epoch = int(epoch)
 
     def __len__(self):
         return len(self.paths)
 
     def __getitem__(self, i):
-        tensor = preprocess_image(self.paths[i].read_bytes(), IMG_SIZE, MEAN, STD)[0]
+        raw_bytes = self.paths[i].read_bytes()
+        if self.augment and self.field_augmentor is not None:
+            sample_seed = _sample_seed(self.seed, self.epoch, i)
+            aug_img = augment_image_bytes(raw_bytes, self.field_augmentor, seed=sample_seed)
+            buf = io.BytesIO()
+            aug_img.save(buf, format="PNG")
+            image_bytes = buf.getvalue()
+        else:
+            image_bytes = raw_bytes
+
+        tensor = preprocess_image(image_bytes, IMG_SIZE, MEAN, STD)[0]
         if self.augment and random.random() < 0.5:
             # Horizontal flip. Per-channel normalisation commutes with flipping, so this
             # equals flipping before normalisation.
@@ -89,22 +125,31 @@ def build_model(num_classes):
     model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_classes)
     return model
 
-
 def run_epoch(model, loader, criterion, optimizer, device, frozen=False):
     training = optimizer is not None
+    use_amp = device.type == "cuda"
     model.train(training)
     if frozen:
         model.features.eval()  # keep BatchNorm statistics fixed while the backbone is frozen
     total_loss, n, preds, targets = 0.0, 0, [], []
+    total_batches = len(loader)
     with torch.enable_grad() if training else torch.no_grad():
-        for x, y in loader:
-            x, y = x.to(device), y.to(device)
-            logits = model(x)
-            loss = criterion(logits, y)
+        for step, (x, y) in enumerate(loader, start=1):
+            x = x.to(device, non_blocking=use_amp)
+            y = y.to(device, non_blocking=use_amp)
+            with torch.amp.autocast("cuda", enabled=use_amp):
+                logits = model(x)
+                loss = criterion(logits, y)
             if training:
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                if step % 200 == 0 or step == total_batches:
+                    print(
+                        f"  train batch {step}/{total_batches} "
+                        f"({100.0 * step / max(total_batches, 1):.0f}%)",
+                        flush=True,
+                    )
             total_loss += loss.item() * len(y)
             n += len(y)
             preds.append(logits.argmax(1).cpu())
@@ -112,8 +157,6 @@ def run_epoch(model, loader, criterion, optimizer, device, frozen=False):
     p = torch.cat(preds).numpy()
     t = torch.cat(targets).numpy()
     return total_loss / n, accuracy_score(t, p), f1_score(t, p, average="macro")
-
-
 def sha256(path):
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -148,7 +191,7 @@ def export_onnx(model, out_path, sample_batch):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--splits", default=str(TRAINING_DIR / "datasets" / "splits_demo1_13c.csv"))
+    parser.add_argument("--splits", default=str(TRAINING_DIR / "datasets" / "splits_all_38c.csv"))
     parser.add_argument(
         "--data-root",
         default=str(TRAINING_DIR / "datasets" / "images"),
@@ -157,7 +200,7 @@ def main():
     parser.add_argument(
         "--output-dir", default=str(AI_SERVICE_DIR / "models" / "plant-v1" / "outputs")
     )
-    parser.add_argument("--expected-classes", type=int, default=13)
+    parser.add_argument("--expected-classes", type=int, default=38)
     parser.add_argument("--epochs", type=int, default=12)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
@@ -169,6 +212,17 @@ def main():
     parser.add_argument("--max-per-class", type=int, default=0, help="0 = use all (smoke tests)")
     parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--field-aug",
+        action="store_true",
+        help="enable field-condition augmentations on the training split",
+    )
+    parser.add_argument(
+        "--field-aug-prob",
+        type=float,
+        default=0.4,
+        help="probability of outdoor background compositing when --field-aug is set",
+    )
     args = parser.parse_args()
 
     random.seed(args.seed)
@@ -222,20 +276,35 @@ def main():
         if part.empty:
             raise SystemExit(f"The '{name}' split is empty.")
 
+    field_augmentor = (
+        FieldAugmentor(bg_prob=args.field_aug_prob, seed=args.seed) if args.field_aug else None
+    )
+    train_dataset = LeafDataset(
+        splits["train"],
+        args.data_root,
+        path_col,
+        augment=True,
+        field_augmentor=field_augmentor,
+        seed=args.seed,
+    )
+    loader_generator = torch.Generator()
+    loader_generator.manual_seed(args.seed)
+
     loaders = {
         "train": DataLoader(
-            LeafDataset(splits["train"], args.data_root, path_col, augment=True),
+            train_dataset,
             batch_size=args.batch_size,
             shuffle=True,
             num_workers=args.num_workers,
+            generator=loader_generator,
         ),
         "val": DataLoader(
-            LeafDataset(splits["val"], args.data_root, path_col),
+            LeafDataset(splits["val"], args.data_root, path_col, seed=args.seed),
             batch_size=args.batch_size,
             num_workers=args.num_workers,
         ),
         "test": DataLoader(
-            LeafDataset(splits["test"], args.data_root, path_col),
+            LeafDataset(splits["test"], args.data_root, path_col, seed=args.seed),
             batch_size=args.batch_size,
             num_workers=args.num_workers,
         ),
@@ -260,6 +329,7 @@ def main():
 
     best_f1, best_epoch, history = -1.0, -1, []
     for epoch in range(args.epochs):
+        train_dataset.set_epoch(epoch)
         frozen = epoch < args.freeze_epochs
         for p in model.features.parameters():
             p.requires_grad = not frozen
@@ -274,6 +344,7 @@ def main():
 
         row = dict(
             epoch=epoch + 1,
+            field_aug=bool(args.field_aug),
             frozen_backbone=frozen,
             epoch_seconds=round(epoch_time, 1),
             train_loss=tr_loss,
@@ -330,6 +401,7 @@ def main():
 
     metrics = {
         "best_epoch": best_epoch,
+        "field_aug": bool(args.field_aug),
         "test_accuracy": float(accuracy_score(t, p)),
         "test_macro_f1": float(f1_score(t, p, average="macro")),
         "num_classes": len(classes),

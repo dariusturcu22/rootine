@@ -42,6 +42,7 @@ gradcam
 **/outputs_*/history.json
 **/outputs_*/onnx_check.json
 **/outputs_*/confusion_matrix.csv
+.artifacts
 
 
 # IDEs and OS
