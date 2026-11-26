@@ -40,12 +40,16 @@ def build_grid(tiles: list[Image.Image], cols: int = 4, rows: int = 4) -> Image.
     grid = Image.new("RGB", (cols * tile_w, rows * tile_h), (25, 25, 25))
     for idx, tile in enumerate(tiles[: cols * rows]):
         r, c = divmod(idx, cols)
-        grid.paste(tile.resize((tile_w, tile_h), Image.Resampling.BILINEAR), (c * tile_w, r * tile_h))
+        grid.paste(
+            tile.resize((tile_w, tile_h), Image.Resampling.BILINEAR), (c * tile_w, r * tile_h)
+        )
     return grid
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Sanity-check FieldAugmentor and write a 4x4 grid.")
+    parser = argparse.ArgumentParser(
+        description="Sanity-check FieldAugmentor and write a 4x4 grid."
+    )
     parser.add_argument(
         "--images-dir",
         type=Path,
@@ -65,8 +69,12 @@ def main() -> None:
         help="Output path for the 4x4 preview grid.",
     )
     parser.add_argument("--seed", type=int, default=42, help="Base seed for reproducible check.")
-    parser.add_argument("--bg-prob", type=float, default=0.75, help="Background composite probability.")
-    parser.add_argument("--transform-prob", type=float, default=0.85, help="Field transform probability.")
+    parser.add_argument(
+        "--bg-prob", type=float, default=0.75, help="Background composite probability."
+    )
+    parser.add_argument(
+        "--transform-prob", type=float, default=0.85, help="Field transform probability."
+    )
     args = parser.parse_args()
 
     augmentor = FieldAugmentor(
@@ -90,7 +98,9 @@ def main() -> None:
     out_a = augmentor(sources[0], seed=args.seed)
     out_b = augmentor(sources[0], seed=args.seed)
     assert out_a.size == (224, 224) and out_a.mode == "RGB"
-    assert list(out_a.getdata()) == list(out_b.getdata()), "Seeded augmentation was not deterministic"
+    assert list(out_a.getdata()) == list(out_b.getdata()), (
+        "Seeded augmentation was not deterministic"
+    )
 
     augmented_tiles = [augmentor(src, seed=args.seed + idx) for idx, src in enumerate(sources)]
     grid = build_grid(augmented_tiles, cols=4, rows=4)

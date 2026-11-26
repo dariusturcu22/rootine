@@ -125,6 +125,7 @@ def build_model(num_classes):
     model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_classes)
     return model
 
+
 def run_epoch(model, loader, criterion, optimizer, device, frozen=False):
     training = optimizer is not None
     use_amp = device.type == "cuda"
@@ -157,6 +158,8 @@ def run_epoch(model, loader, criterion, optimizer, device, frozen=False):
     p = torch.cat(preds).numpy()
     t = torch.cat(targets).numpy()
     return total_loss / n, accuracy_score(t, p), f1_score(t, p, average="macro")
+
+
 def sha256(path):
     h = hashlib.sha256()
     with open(path, "rb") as f:

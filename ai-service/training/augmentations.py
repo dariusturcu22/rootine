@@ -46,9 +46,7 @@ def discover_background_images(bg_dir: str | Path | None = DEFAULT_BG_DIR) -> li
     if not root.exists() or not root.is_dir():
         return []
     return [
-        p
-        for p in sorted(root.rglob("*"))
-        if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
+        p for p in sorted(root.rglob("*")) if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS
     ]
 
 
@@ -312,7 +310,8 @@ def apply_blur(
     for ky, kx in zip(nz_y.tolist(), nz_x.tolist()):
         acc += float(kernel[ky, kx]) * padded[ky : ky + h, kx : kx + w, :]
     return Image.fromarray(np.clip(acc, 0, 255).astype(np.uint8), mode="RGB")
-    
+
+
 def _find_perspective_coeffs(
     src_pts: list[tuple[float, float]],
     dst_pts: list[tuple[float, float]],
