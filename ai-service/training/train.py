@@ -73,7 +73,7 @@ def detect_columns(df):
 
 def _sample_seed(base_seed: int, epoch: int, index: int) -> int:
     """Derive a deterministic 32-bit seed from run seed, epoch, and sample index."""
-    payload = f"{base_seed}:{epoch}:{index}".encode("utf-8")
+    payload = f"{base_seed}:{epoch}:{index}".encode()
     digest = hashlib.blake2b(payload, digest_size=4).digest()
     return int.from_bytes(digest, byteorder="little")
 

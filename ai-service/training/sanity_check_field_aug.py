@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import logging
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from training.augmentations import DEFAULT_BG_DIR, FieldAugmentor, IMAGE_EXTENSIONS
+from training.augmentations import DEFAULT_BG_DIR, IMAGE_EXTENSIONS, FieldAugmentor
+
+logger = logging.getLogger(__name__)
 
 
 def find_sample_images(images_dir: Path, limit: int = 16) -> list[Path]:
@@ -77,13 +80,14 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
     augmentor = FieldAugmentor(
         bg_prob=args.bg_prob,
         transform_prob=args.transform_prob,
         bg_dir=args.bg_dir,
         seed=args.seed,
     )
-    print(f"Background images discovered: {len(augmentor.bg_paths)} (from {args.bg_dir})")
+    logger.info("Background images discovered: %d (from %s)", len(augmentor.bg_paths), args.bg_dir)
 
     sample_paths = find_sample_images(args.images_dir, limit=16)
     sources: list[Image.Image] = []
@@ -107,7 +111,7 @@ def main() -> None:
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     grid.save(args.out)
-    print(f"Saved 4x4 preview grid to {args.out}")
+    logger.info("Saved 4x4 preview grid to %s", args.out)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,24 @@ OUTDOOR_BACKGROUNDS = ("soil", "foliage", "sky", "wood_field")
 IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".bmp")
 DEFAULT_BG_DIR = Path(__file__).resolve().parent / "backgrounds"
 
+# Segmentation thresholds
+FG_SCORE_THRESHOLD = 0.36
+SOFT_MASK_THRESHOLD = 0.5
+MIN_FG_RATIO = 0.08
+MAX_FG_RATIO = 0.92
+
+# Transform probabilities & kernel sizes
+COIN_FLIP_PROB = 0.5
+RADIAL_SHADOW_DARKEN_PROB = 0.5
+GAUSSIAN_BLUR_PROB = 0.65
+PIL_FAST_KERNEL_SIZE = 5
+
+SHADOW_APPLY_PROB = 0.65
+COLOR_JITTER_APPLY_PROB = 0.75
+PERSPECTIVE_CROP_APPLY_PROB = 0.50
+BLUR_APPLY_PROB = 0.45
+JPEG_APPLY_PROB = 0.50
+
 
 def make_rng(seed: int | None = None) -> tuple[random.Random, np.random.Generator]:
     """Create paired Python and NumPy RNGs from an optional integer seed."""
@@ -176,7 +194,7 @@ def segment_leaf_mask(rgb: np.ndarray) -> np.ndarray:
         + 0.30 * np.clip(excess_green, 0.0, 1.0)
         + 0.15 * np.clip(chroma * 2.0, 0.0, 1.0)
     )
-    fg_bool = score > 0.36
+    fg_bool = score > FG_SCORE_THRESHOLD
 
     mask_img = Image.fromarray((fg_bool.astype(np.uint8) * 255), mode="L")
     mask_img = mask_img.filter(ImageFilter.MaxFilter(size=5))
@@ -184,8 +202,8 @@ def segment_leaf_mask(rgb: np.ndarray) -> np.ndarray:
     mask_img = mask_img.filter(ImageFilter.GaussianBlur(radius=2.0))
     soft_mask = np.asarray(mask_img, dtype=np.float32) / 255.0
 
-    fg_ratio = float((soft_mask > 0.5).mean())
-    if fg_ratio < 0.08 or fg_ratio > 0.92:
+    fg_ratio = float((soft_mask > SOFT_MASK_THRESHOLD).mean())
+    if fg_ratio < MIN_FG_RATIO or fg_ratio > MAX_FG_RATIO:
         nx, ny = _norm_grid(w, h)
         ry, rx = 0.38, 0.38
         ell = (((nx - 0.5) / rx) ** 2 + ((ny - 0.5) / ry) ** 2) <= 1.0
@@ -227,7 +245,7 @@ def apply_random_shadows(
     nx, ny = _norm_grid(w, h)
 
     strength = float(np_rng.uniform(0.18, 0.45))
-    if py_rng.random() < 0.5:
+    if py_rng.random() < COIN_FLIP_PROB:
         angle = float(np_rng.uniform(0.0, 2.0 * np.pi))
         proj = (nx - 0.5) * np.cos(angle) + (ny - 0.5) * np.sin(angle)
         factor_map = 1.0 - strength * (0.5 - 0.5 * np.clip(proj * 1.8, -1.0, 1.0))
@@ -237,7 +255,7 @@ def apply_random_shadows(
         radius = float(np_rng.uniform(0.25, 0.65))
         dist = np.sqrt((nx - cx) ** 2 + (ny - cy) ** 2)
         blob = np.exp(-((dist / radius) ** 2))
-        if py_rng.random() < 0.5:
+        if py_rng.random() < RADIAL_SHADOW_DARKEN_PROB:
             factor_map = 1.0 - strength * blob
         else:
             factor_map = 1.0 + (strength * 0.7) * blob
@@ -270,7 +288,7 @@ def apply_blur(
     np_rng: np.random.Generator,
 ) -> Image.Image:
     """Apply Gaussian blur or fast directional motion blur."""
-    if py_rng.random() < 0.65:
+    if py_rng.random() < GAUSSIAN_BLUR_PROB:
         radius = float(np_rng.uniform(0.4, 1.4))
         return image.filter(ImageFilter.GaussianBlur(radius=radius))
 
@@ -292,7 +310,7 @@ def apply_blur(
     else:
         kernel[ksize // 2, ksize // 2] = 1.0
 
-    if ksize == 5:
+    if ksize == PIL_FAST_KERNEL_SIZE:
         pil_kernel = ImageFilter.Kernel(
             size=(5, 5),
             kernel=kernel.ravel().tolist(),
@@ -307,7 +325,7 @@ def apply_blur(
     padded = np.pad(arr, ((pad, pad), (pad, pad), (0, 0)), mode="edge")
     acc = np.zeros_like(arr)
     nz_y, nz_x = np.nonzero(kernel)
-    for ky, kx in zip(nz_y.tolist(), nz_x.tolist()):
+    for ky, kx in zip(nz_y.tolist(), nz_x.tolist(), strict=True):
         acc += float(kernel[ky, kx]) * padded[ky : ky + h, kx : kx + w, :]
     return Image.fromarray(np.clip(acc, 0, 255).astype(np.uint8), mode="RGB")
 
@@ -318,7 +336,7 @@ def _find_perspective_coeffs(
 ) -> tuple[float, ...]:
     """Solve perspective transform coefficients mapping src -> dst for PIL."""
     matrix = []
-    for (sx, sy), (dx, dy) in zip(src_pts, dst_pts):
+    for (sx, sy), (dx, dy) in zip(src_pts, dst_pts, strict=True):
         matrix.append([dx, dy, 1.0, 0.0, 0.0, 0.0, -sx * dx, -sx * dy])
         matrix.append([0.0, 0.0, 0.0, dx, dy, 1.0, -sy * dx, -sy * dy])
     a = np.asarray(matrix, dtype=np.float64)
@@ -334,7 +352,7 @@ def apply_perspective_or_scale_crop(
 ) -> Image.Image:
     """Apply random perspective warp or scale crop back to original dimensions."""
     w, h = image.size
-    if py_rng.random() < 0.5:
+    if py_rng.random() < COIN_FLIP_PROB:
         scale = float(np_rng.uniform(0.78, 0.98))
         crop_w = max(1, int(round(w * scale)))
         crop_h = max(1, int(round(h * scale)))
@@ -408,15 +426,15 @@ class FieldAugmentor:
             out = composite_outdoor_background(out, np_rng, py_rng, bg_paths=self.bg_paths)
 
         if py_rng.random() < self.transform_prob:
-            if py_rng.random() < 0.65:
+            if py_rng.random() < SHADOW_APPLY_PROB:
                 out = apply_random_shadows(out, np_rng, py_rng)
-            if py_rng.random() < 0.75:
+            if py_rng.random() < COLOR_JITTER_APPLY_PROB:
                 out = apply_color_jitter(out, py_rng)
-            if py_rng.random() < 0.50:
+            if py_rng.random() < PERSPECTIVE_CROP_APPLY_PROB:
                 out = apply_perspective_or_scale_crop(out, np_rng, py_rng)
-            if py_rng.random() < 0.45:
+            if py_rng.random() < BLUR_APPLY_PROB:
                 out = apply_blur(out, py_rng, np_rng)
-            if py_rng.random() < 0.50:
+            if py_rng.random() < JPEG_APPLY_PROB:
                 out = apply_jpeg_compression(out, py_rng)
 
         return out
