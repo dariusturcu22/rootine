@@ -48,6 +48,15 @@ public class ParcelService {
         .toList();
   }
 
+  @Transactional(readOnly = true)
+  public ParcelResponse getParcel(UUID ownerId, UUID parcelId) {
+    Parcel parcel =
+        parcelRepository
+            .findByIdAndOwnerId(parcelId, ownerId)
+            .orElseThrow(ParcelNotFoundException::new);
+    return parcelMapper.toResponse(parcel);
+  }
+
   @Transactional
   public ParcelResponse replaceParcel(UUID ownerId, UUID parcelId, ParcelRequest request) {
     Parcel parcel =
@@ -60,6 +69,15 @@ public class ParcelService {
     parcel.setCrop(request.crop());
     parcel.setGeometry(polygon);
     return parcelMapper.toResponse(parcelRepository.save(parcel));
+  }
+
+  @Transactional
+  public void deleteParcel(UUID ownerId, UUID parcelId) {
+    Parcel parcel =
+        parcelRepository
+            .findByIdAndOwnerId(parcelId, ownerId)
+            .orElseThrow(ParcelNotFoundException::new);
+    parcelRepository.delete(parcel);
   }
 
   private Polygon toValidPolygon(app.parcel.dto.PolygonGeometry geometry) {

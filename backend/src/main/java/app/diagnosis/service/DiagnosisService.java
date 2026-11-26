@@ -222,7 +222,7 @@ public class DiagnosisService {
                   .toList();
       return new DiagnosisResult(
           status, prediction.crop(), cropCheck, topPredictions, supportLevel);
-    } catch (IllegalArgumentException exception) {
+    } catch (IllegalArgumentException | NullPointerException exception) {
       throw new AiServiceException("AI service returned an invalid prediction.", exception);
     }
   }

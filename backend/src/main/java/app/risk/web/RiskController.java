@@ -8,7 +8,6 @@ import app.risk.dto.HeatmapPoint;
 import app.risk.dto.RiskResponse;
 import app.risk.service.RiskService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,11 +24,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Risk and heatmap reads. The parcel risk endpoint obtains a live result from the AI service. Every
- * endpoint needs a token.
+ * The per-parcel endpoint requests a fresh risk result from the AI service. Every endpoint needs a
+ * token.
  */
 @RestController
-@Tag(name = "Risk", description = "Read live parcel risk results and the heatmap.")
+@Tag(name = "Risk", description = "Request current per-parcel weather risk.")
 @SecurityRequirement(name = OpenApiConfig.BEARER_AUTH_SCHEME_NAME)
 public class RiskController {
 
@@ -42,12 +41,11 @@ public class RiskController {
 
   @Operation(
       summary = "Get a parcel's current risk result",
-      description =
-          "Loads the owned parcel and calls the AI service for a live weather-based risk.")
+      description = "Requests the current weather risk result from the AI service.")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
-        description = "The current risk result returned by the AI service.",
+        description = "The current weather risk result.",
         content = @Content(schema = @Schema(implementation = RiskResponse.class))),
     @ApiResponse(
         responseCode = "401",
@@ -76,17 +74,8 @@ public class RiskController {
     return riskService.getParcelRisk(UUID.fromString(jwt.getSubject()), id);
   }
 
-  @Operation(
-      summary = "Get the risk heatmap",
-      description =
-          "Returns one point per parcel that has a stored risk result, at the parcel centre."
-              + " Parcels not yet processed by the daily job are omitted.")
+  @Operation(summary = "Get the risk heatmap", description = "Not available in Demo 1.")
   @ApiResponses({
-    @ApiResponse(
-        responseCode = "200",
-        description = "One point per parcel with a stored risk result; an empty list if none.",
-        content =
-            @Content(array = @ArraySchema(schema = @Schema(implementation = HeatmapPoint.class)))),
     @ApiResponse(
         responseCode = "401",
         description = "The token is missing, invalid or expired.",
