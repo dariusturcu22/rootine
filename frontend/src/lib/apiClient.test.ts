@@ -10,12 +10,13 @@ import {
   getParcels,
   login,
   openAlertStream,
+  register,
   SESSION_EXPIRED_EVENT,
 } from './apiClient'
 
-describe('apiFetch', () => {
-  afterEach(() => useAuthStore.getState().clear())
+afterEach(() => useAuthStore.getState().clear())
 
+describe('apiFetch authorization', () => {
   it('adds the JWT and parses the JSON response', async () => {
     let authorization: string | null = null
     server.use(
@@ -56,6 +57,30 @@ describe('apiFetch', () => {
     })
   })
 
+  it('registers without sending an existing token and uses the contract request body', async () => {
+    let authorization: string | null = 'unset'
+    let requestBody: unknown
+    server.use(
+      http.post('*/api/auth/register', async ({ request }) => {
+        authorization = request.headers.get('Authorization')
+        requestBody = await request.json()
+        return HttpResponse.json(
+          { id: '7c9e6679-7425-40de-944b-e07fc1f90ae7', email: 'farmer@example.com' },
+          { status: 201 },
+        )
+      }),
+    )
+    useAuthStore.getState().setToken('existing-token')
+
+    const user = await register({ email: 'farmer@example.com', password: 'strong-password' })
+
+    expect(user.email).toBe('farmer@example.com')
+    expect(requestBody).toEqual({ email: 'farmer@example.com', password: 'strong-password' })
+    expect(authorization).toBeNull()
+  })
+})
+
+describe('apiFetch errors', () => {
   it('throws ApiError with the status for non-2xx responses', async () => {
     server.use(http.get('*/api/ping', () => new HttpResponse(null, { status: 401 })))
     useAuthStore.getState().setToken('expired-token')
@@ -68,6 +93,9 @@ describe('apiFetch', () => {
       expect.objectContaining({ type: SESSION_EXPIRED_EVENT }),
     )
   })
+})
+
+describe('API authentication', () => {
 
   it('uses the exact detail from a Problem Details response', async () => {
     const detail = 'Parcel name must be unique.'
@@ -148,7 +176,9 @@ describe('apiFetch', () => {
       expect.objectContaining({ type: SESSION_EXPIRED_EVENT }),
     )
   })
+})
 
+describe('Parcel API', () => {
   it('fetches parcels in the backend contract shape from the MSW handler', async () => {
     const parcels = await getParcels()
 
