@@ -6,25 +6,40 @@ import app.aiclient.RiskRequest;
 import app.parcel.domain.Parcel;
 import app.parcel.repository.ParcelRepository;
 import app.parcel.service.ParcelNotFoundException;
+import app.risk.domain.ParcelRisk;
 import app.risk.dto.DiseaseRisk;
+import app.risk.dto.HeatmapPoint;
 import app.risk.dto.RiskLevel;
 import app.risk.dto.RiskResponse;
+import app.risk.repository.ParcelRiskRepository;
 import java.util.List;
 import java.util.UUID;
 import org.locationtech.jts.geom.Coordinate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** Loads an owned parcel and obtains its current weather risk from the AI service. */
+/** Reads live weather risk for an owned parcel and stored risk results for its heatmap. */
 @Service
 public class RiskService {
 
   private final ParcelRepository parcelRepository;
+  private final ParcelRiskRepository parcelRiskRepository;
   private final AiServiceClient aiServiceClient;
 
-  public RiskService(ParcelRepository parcelRepository, AiServiceClient aiServiceClient) {
+  public RiskService(
+      ParcelRepository parcelRepository,
+      ParcelRiskRepository parcelRiskRepository,
+      AiServiceClient aiServiceClient) {
     this.parcelRepository = parcelRepository;
+    this.parcelRiskRepository = parcelRiskRepository;
     this.aiServiceClient = aiServiceClient;
+  }
+
+  @Transactional(readOnly = true)
+  public List<HeatmapPoint> getHeatmap(UUID ownerId) {
+    return parcelRiskRepository.findByParcelOwnerId(ownerId).stream()
+        .map(RiskService::toHeatmapPoint)
+        .toList();
   }
 
   @Transactional(readOnly = true)
@@ -39,6 +54,20 @@ public class RiskService {
         aiServiceClient.getRisk(
             new RiskRequest(centre.getY(), centre.getX(), parcel.getCrop(), null));
     return toResponse(parcel, aiResponse);
+  }
+
+  private static HeatmapPoint toHeatmapPoint(ParcelRisk risk) {
+    Parcel parcel = risk.getParcel();
+    Coordinate centre = parcel.getGeometry().getCentroid().getCoordinate();
+    return new HeatmapPoint(
+        parcel.getId(),
+        parcel.getName(),
+        parcel.getCrop(),
+        centre.getY(),
+        centre.getX(),
+        toRiskLevel(risk.getLevel()),
+        risk.getRiskIndex(),
+        risk.getGeneratedAt());
   }
 
   private static RiskResponse toResponse(Parcel parcel, app.aiclient.RiskResponse response) {
