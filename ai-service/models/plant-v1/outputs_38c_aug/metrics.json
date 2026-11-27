@@ -1,0 +1,9 @@
+{
+  "best_epoch": 7,
+  "test_accuracy": 0.9956011730205279,
+  "test_macro_f1": 0.9941378055076623,
+  "num_classes": 38,
+  "num_test_images": 8184,
+  "device": "cuda",
+  "total_train_seconds": 2177.7
+}
