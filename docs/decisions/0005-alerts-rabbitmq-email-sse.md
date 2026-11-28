@@ -8,6 +8,7 @@ The daily risk job publishes a message to RabbitMQ when the risk is high. A cons
 
 ## Consequences
 - Sending is separate from computing risk; a slow mail server does not block the job.
-- Failed messages can be retried.
+- Failed email deliveries are retried up to three times, then moved to a dead-letter queue.
 - RabbitMQ is one more service to run (it is in `docker-compose.yml`).
+- Local development uses Mailpit to capture email without sending it outside the machine.
 - SSE goes through nginx, so `/api` has proxy buffering off (see ADR 0006).

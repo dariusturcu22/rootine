@@ -11,6 +11,8 @@ import app.aiclient.AiServiceClient;
 import app.aiclient.AiServiceException;
 import app.aiclient.DiseaseRisk;
 import app.aiclient.RiskRequest;
+import app.alert.AlertMessage;
+import app.alert.AlertPublisher;
 import app.parcel.domain.Parcel;
 import app.parcel.repository.ParcelRepository;
 import app.risk.domain.ParcelRisk;
@@ -43,12 +45,17 @@ class RiskRefreshServiceTest {
   private final ParcelRepository parcelRepository = mock(ParcelRepository.class);
   private final ParcelRiskRepository parcelRiskRepository = mock(ParcelRiskRepository.class);
   private final AiServiceClient aiServiceClient = mock(AiServiceClient.class);
+  private final AlertPublisher alertPublisher = mock(AlertPublisher.class);
   private final PlatformTransactionManager transactionManager =
       mock(PlatformTransactionManager.class);
 
   private final RiskRefreshService service =
       new RiskRefreshService(
-          parcelRepository, parcelRiskRepository, aiServiceClient, transactionManager);
+          parcelRepository,
+          parcelRiskRepository,
+          aiServiceClient,
+          alertPublisher,
+          transactionManager);
 
   RiskRefreshServiceTest() {
     when(transactionManager.getTransaction(ArgumentMatchers.any()))
@@ -77,6 +84,7 @@ class RiskRefreshServiceTest {
 
     assertThat(stored).isEqualTo(2);
     verify(parcelRiskRepository, org.mockito.Mockito.times(2)).save(any(ParcelRisk.class));
+    verify(alertPublisher, never()).publish(any(AlertMessage.class));
   }
 
   @Test
@@ -103,6 +111,7 @@ class RiskRefreshServiceTest {
     assertThat(saved.getValue().getLevel()).isEqualTo("not_modelled");
     assertThat(saved.getValue().getRiskIndex()).isZero();
     assertThat(saved.getValue().getDiseases()).isEmpty();
+    verify(alertPublisher, never()).publish(any(AlertMessage.class));
   }
 
   @Test
@@ -132,6 +141,40 @@ class RiskRefreshServiceTest {
     verify(parcelRiskRepository).save(saved.capture());
     assertThat(saved.getValue().getParcel().getId()).isEqualTo(healthy.getId());
     assertThat(saved.getValue().getLevel()).isEqualTo("high");
+    ArgumentCaptor<AlertMessage> alert = ArgumentCaptor.forClass(AlertMessage.class);
+    verify(alertPublisher).publish(alert.capture());
+    assertThat(alert.getValue().userId()).isEqualTo(healthy.getOwner().getId());
+    assertThat(alert.getValue().recipientEmail()).isEqualTo(healthy.getOwner().getEmail());
+    assertThat(alert.getValue().parcelName()).isEqualTo("Field");
+    assertThat(alert.getValue().crop()).isEqualTo("tomato");
+    assertThat(alert.getValue().riskIndex()).isEqualTo(78);
+    assertThat(alert.getValue().reason()).isEqualTo("High risk.");
+    assertThat(alert.getValue().generatedAt()).isEqualTo(Instant.parse("2026-11-20T06:00:00Z"));
+  }
+
+  @Test
+  void alertPublicationFailureDoesNotInterruptRiskStorage() {
+    Parcel parcel = parcel("tomato");
+    when(parcelRepository.findAll()).thenReturn(List.of(parcel));
+    when(parcelRepository.getReferenceById(parcel.getId())).thenReturn(parcel);
+    when(parcelRiskRepository.findById(any())).thenReturn(Optional.empty());
+    when(aiServiceClient.getRisk(any(RiskRequest.class)))
+        .thenReturn(
+            new app.aiclient.RiskResponse(
+                "tomato",
+                "high",
+                78,
+                "High risk.",
+                List.of(),
+                Instant.parse("2026-11-20T06:00:00Z")));
+    org.mockito.Mockito.doThrow(new IllegalStateException("RabbitMQ unavailable"))
+        .when(alertPublisher)
+        .publish(any(AlertMessage.class));
+
+    int stored = service.refreshAllParcels();
+
+    assertThat(stored).isEqualTo(1);
+    verify(parcelRiskRepository).save(any(ParcelRisk.class));
   }
 
   private static Parcel parcel(String crop) {
