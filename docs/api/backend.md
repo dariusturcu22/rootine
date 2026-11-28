@@ -334,7 +334,7 @@ Errors:
 
 ### GET /risk/heatmap
 
-Returns one point for each of the user's parcels that has a stored risk result, using the parcel centre and its latest result. Parcels not yet processed by the daily job are omitted.
+Returns one point for each of the user's parcels with a successfully stored risk result, using the parcel centre and its latest result. Parcels without a stored result (including parcels not yet processed by the daily job or whose refresh failed) are omitted; the endpoint does not invent a risk level or score for them.
 
 Response 200:
 
@@ -353,7 +353,7 @@ Response 200:
 ]
 ```
 
-An empty list is returned when the user has no parcels with stored risk results.
+An empty list is returned when the user has no parcels with stored risk results, including when the user has no parcels.
 
 Errors:
 

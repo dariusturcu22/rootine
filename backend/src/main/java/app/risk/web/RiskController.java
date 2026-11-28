@@ -1,7 +1,5 @@
 package app.risk.web;
 
-import static app.common.error.EndpointStub.notImplemented;
-
 import app.common.config.OpenApiConfig;
 import app.common.error.ProblemDetailResponse;
 import app.risk.dto.HeatmapPoint;
@@ -79,8 +77,8 @@ public class RiskController {
   @Operation(
       summary = "Get the risk heatmap",
       description =
-          "Returns one point per parcel that has a stored risk result, at the parcel centre."
-              + " Parcels not yet processed by the daily job are omitted.")
+          "Returns one point per owned parcel with a successfully stored risk result, at the parcel"
+              + " centre. Parcels without a stored result are omitted.")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -93,17 +91,10 @@ public class RiskController {
         content =
             @Content(
                 mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @GetMapping(path = "/risk/heatmap", produces = MediaType.APPLICATION_JSON_VALUE)
-  public List<HeatmapPoint> getHeatmap() {
-    throw notImplemented();
+  public List<HeatmapPoint> getHeatmap(@AuthenticationPrincipal Jwt jwt) {
+    return riskService.getHeatmap(UUID.fromString(jwt.getSubject()));
   }
 }
