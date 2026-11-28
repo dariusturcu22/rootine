@@ -10,6 +10,8 @@ import app.AbstractIntegrationTest;
 import app.risk.dto.RiskLevel;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -49,24 +51,34 @@ class AlertDeliveryIT extends AbstractIntegrationTest {
     rabbitTemplate.convertAndSend(ALERT_EXCHANGE, ALERT_ROUTING_KEY, message);
 
     verify(mailSender, timeout(15_000).times(3)).send(any(SimpleMailMessage.class));
-    AlertMessage rejected = receiveDeadLetter();
+    AlertMessage rejected = receiveDeadLetter(message);
     assertThat(rejected)
         .as("alert is dead-lettered after all email delivery attempts fail")
         .isNotNull()
         .isEqualTo(message);
   }
 
-  private AlertMessage receiveDeadLetter() {
+  private AlertMessage receiveDeadLetter(AlertMessage expected) {
+    List<AlertMessage> unrelatedMessages = new ArrayList<>();
     long deadline = System.nanoTime() + DEAD_LETTER_TIMEOUT.toNanos();
-    while (System.nanoTime() < deadline) {
-      Object received = rabbitTemplate.receiveAndConvert(DEAD_LETTER_QUEUE, 500);
-      if (received instanceof AlertMessage alertMessage) {
-        return alertMessage;
+    try {
+      while (System.nanoTime() < deadline) {
+        Object received = rabbitTemplate.receiveAndConvert(DEAD_LETTER_QUEUE, 500);
+        if (received instanceof AlertMessage alertMessage) {
+          if (alertMessage.equals(expected)) {
+            return alertMessage;
+          }
+          unrelatedMessages.add(alertMessage);
+        } else if (received != null) {
+          throw new AssertionError("Unexpected message in the risk-alert dead-letter queue.");
+        }
       }
-      if (received != null) {
-        throw new AssertionError("Unexpected message in the risk-alert dead-letter queue.");
+      return null;
+    } finally {
+      for (AlertMessage unrelatedMessage : unrelatedMessages) {
+        rabbitTemplate.convertAndSend(
+            "rootine.alerts.dead", "rootine.risk-alert.dead", unrelatedMessage);
       }
     }
-    return null;
   }
 }
