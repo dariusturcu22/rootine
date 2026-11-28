@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rootine Demo 1</title>
+<link rel="stylesheet" href="deck.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="leaf" viewBox="0 0 108 108">
+    <path d="M16 86C15 45 42 12 102 0L17 86Z" fill="var(--leaf-outline)"/>
+    <path d="M22 87C62 86 91 61 103 2L22 87Z" fill="#c5e1a5"/>
+    <path d="M18 84 0 105" fill="none" stroke="var(--leaf-outline)" stroke-width="6"/>
+  </symbol>
+  <symbol id="leafshape" viewBox="0 0 108 108">
+    <path d="M16 86C15 45 42 12 102 0L17 86Z" fill="currentColor"/>
+    <path d="M22 87C62 86 91 61 103 2L22 87Z" fill="currentColor"/>
+    <path d="M18 84 0 105" fill="none" stroke="currentColor" stroke-width="6"/>
+  </symbol>
+</svg>
+<main class="stage">
+
+  <!-- 1. Produsul (10 s) -->
+  <section class="slide s-title on-green" aria-label="Rootine" data-seconds="10">
+    <svg class="leafbg br" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="brand anim"><svg><use href="#leaf"/></svg><span>Rootine</span></div>
+    <h1 class="anim d1">Fermierul vede boala<br>când e deja <span class="mark">târziu</span>.</h1>
+    <p class="soft anim d2">Rootine recunoaște boala dintr-o poză a frunzei și avertizează când vremea o favorizează.</p>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Problema fermierului: boala se observă târziu, când e greu de tratat</li><li>Rootine într-o propoziție: diagnostic dintr-o poză și risc meteo pe parcelă</li><li>Echipa Work in Progress: 8 oameni, 3 echipe</li></ul></aside>
+  </section>
+
+  <!-- 2. ML: diagnostic din fotografie (15 s) -->
+  <section class="slide s-numbers on-pale" aria-label="Diagnostic ML" data-seconds="15">
+    <svg class="leafbg tl" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="col-text">
+      <h2 class="anim">Încarci o poză cu frunza. Modelul alege cele mai probabile 3 diagnostice.</h2>
+      <p class="soft anim d1">Când nu poate decide clar, arată că răspunsul e incert.</p>
+      <p class="soft anim d2" style="font-size:30px">Antrenat pe setul PlantVillage (Mohanty et al., 2016, CC BY-SA 3.0).</p>
+    </div>
+    <div class="rows">
+      <div class="row anim d1"><b>13</b><span>diagnostice posibile acum, pentru culturile de roșii și cartofi.</span></div>
+      <div class="row anim d2"><b>38</b><span>diagnostice în plan, pentru toate culturile din PlantVillage</span></div>
+      <div class="row anim d3"><b class="long">99,67%</b><span>acuratețe pe imagini de laborator. În condiții reale, aceasta scade.</span></div>
+    </div>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Primește poza unei frunze și cultura parcelei; răspunde cu top 3 boli sau „nu sunt sigur”</li><li>Un singur model pentru toate culturile, cu mască pe cultură</li><li>13 clase acum (tomate, cartofi), 38 în plan</li><li>Acuratețe și macro-F1 de 99,67% pe 3.064 de imagini de laborator; pe poze din câmp vor fi mai mici</li><li>Setul de date: PlantVillage, CC BY-SA 3.0</li></ul></aside>
+  </section>
+
+  <!-- 3. ML: risc meteo (15 s) -->
+  <section class="slide s-flow on-bark" aria-label="Risc meteo ML" data-seconds="15">
+    <svg class="leafbg r" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="col-text">
+      <h2 class="anim">Urmărim și vremea.</h2>
+      <p class="soft anim d1">Reguli cunoscute din agricultură transformă temperatura și umiditatea în risc de boală, pentru fiecare parcelă.</p>
+      <div class="chips anim d2"><span class="chip ok">Risc scăzut</span><span class="chip warn">Risc mediu</span><span class="chip bad">Risc ridicat</span></div>
+    </div>
+    <div class="stack">
+      <div class="step anim d1"><b>Open-Meteo</b>temperatura și umiditatea, din oră în oră</div>
+      <div class="down anim d2"></div>
+      <div class="step anim d2"><b>Hutton și TOMCAST</b>Hutton pentru mană, TOMCAST pentru alternarioză și septorioză</div>
+      <div class="down anim d3"></div>
+      <div class="step end anim d3"><b>Risc pe parcelă</b>nivelul și motivul lui</div>
+    </div>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Sunt reguli publicate, nu un model antrenat pe vreme</li><li>Hutton pentru mană la cartofi și tomate; TOMCAST pentru alternarioză și septorioză la tomate</li><li>Date orare de la Open-Meteo; rezultatul: risc scăzut, mediu sau ridicat, cu motivul</li></ul></aside>
+  </section>
+
+  <!-- 4. Backend (25 s) -->
+  <section class="slide s-flow on-pale" aria-label="Backend" data-seconds="25">
+    <svg class="leafbg tl" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="col-text">
+      <h2 class="anim">Backend-ul stă între aplicație, baza de date și model.</h2>
+      <p class="soft anim d1">10 endpointuri active. 45 de teste, toate trec în CI.</p>
+      <p class="soft anim d2" style="font-size:32px">Autentificare cu JWT. Deocamdată emitem doar un token de demo.</p>
+    </div>
+    <svg class="diagram anim d2" viewBox="0 0 960 840" role="img" aria-label="Aplicația web vorbește cu backend-ul, iar backend-ul cu baza de date și cu AI service">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1f2b22"/></marker></defs>
+      <g stroke="#1f2b22" stroke-width="6" fill="none" marker-end="url(#ar)">
+        <path d="M280 165H372"/>
+        <path d="M560 262L300 468"/>
+        <path d="M740 262L740 468"/>
+      </g>
+      <rect x="0" y="70" width="280" height="190" rx="30" fill="#fff"/>
+      <text x="140" y="150" text-anchor="middle" font-size="44" font-weight="900" fill="#1f2b22">Aplicația</text>
+      <text x="140" y="200" text-anchor="middle" font-size="30" font-weight="700" fill="#1f2b22">nginx și React</text>
+      <rect x="380" y="70" width="520" height="190" rx="30" fill="#2e7d32"/>
+      <text x="640" y="150" text-anchor="middle" font-size="52" font-weight="900" fill="#fff">Backend</text>
+      <text x="640" y="200" text-anchor="middle" font-size="30" font-weight="700" fill="#fff">Spring Boot 4, Java 21</text>
+      <rect x="20" y="480" width="440" height="210" rx="30" fill="#fff"/>
+      <text x="240" y="570" text-anchor="middle" font-size="44" font-weight="900" fill="#1f2b22">Bază de date</text>
+      <text x="240" y="620" text-anchor="middle" font-size="30" font-weight="700" fill="#1f2b22">PostgreSQL cu PostGIS</text>
+      <rect x="520" y="480" width="420" height="210" rx="30" fill="#c5e1a5"/>
+      <text x="730" y="570" text-anchor="middle" font-size="44" font-weight="900" fill="#1f2b22">AI service</text>
+      <text x="730" y="620" text-anchor="middle" font-size="30" font-weight="700" fill="#1f2b22">FastAPI și ONNX Runtime</text>
+    </svg>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Arhitectura: aplicația web, backend, bază de date cu PostGIS și un client către AI service</li><li>Endpointuri active: culturi, parcele, diagnostice, risc pe parcelă și tokenul de demo</li><li>45 de teste (26 unitare, 19 de integrare), rulate în CI la fiecare PR</li><li>Ce nu e gata încă: înregistrarea cu e-mail, harta de risc pentru toate parcelele, alertele</li></ul></aside>
+  </section>
+
+  <!-- 5. Frontend (25 s) -->
+  <section class="slide s-feature on-pale" aria-label="Frontend" data-seconds="25">
+    <div class="band"></div>
+    <div class="col-text">
+      <h2 class="anim">Din aplicație desenezi parcela, încarci poza unei frunze și vezi riscul.</h2>
+      <p class="soft anim d1" style="font-size:30px">Foto frunză: PlantVillage (CC BY-SA 3.0). Hartă: Esri.</p>
+    </div>
+    <figure class="shot t1 anim d2" style="left:1010px;top:60px;width:640px"><img src="assets/fe-map.jpg" alt="Harta cu două parcele în aplicația Rootine"></figure>
+    <figure class="shot t2 anim d3" style="left:1180px;top:340px;width:640px"><img src="assets/fe-risk.jpg" alt="Ecranul de risc din aplicația Rootine"></figure>
+    <figure class="shot t3 anim d4" style="left:1010px;top:630px;width:640px"><img src="assets/fe-result.jpg" alt="Rezultatul unui diagnostic în aplicația Rootine: mană la tomate"></figure>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Harta și desenarea parcelelor</li><li>Încărcarea pozei și rezultatul diagnosticului</li><li>Ecranul de risc pe parcele</li><li>30 de teste de frontend</li></ul></aside>
+  </section>
+
+  <!-- 6. Demo (2 s) -->
+  <section class="slide s-divider on-green" aria-label="Demo" data-seconds="2">
+    <svg class="leafbg br" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="brand"><svg><use href="#leaf"/></svg><span>Rootine</span></div>
+    <h2 class="anim">Demo</h2>
+  </section>
+
+  <!-- 7. Până la Demo 2 (45 s). CIORNĂ DE CONFIRMAT de Darius: lista vine din WIP_Plan_ML.pdf si din ce nu s-a făcut înainte de Demo 1. Editează doar elementele <li>. -->
+  <section class="slide s-close on-bark" aria-label="Până la Demo 2" data-seconds="45">
+    <svg class="leafbg br" aria-hidden="true"><use href="#leafshape"/></svg>
+    <div class="col-text">
+      <h2 class="anim">Până la Demo 2, pe 12 decembrie</h2>
+      <ul class="anim d1">
+        <li>Toate cele 38 de clase din PlantVillage</li>
+        <li>Testare pe poze din câmp, nu doar de laborator</li>
+        <li>Un model mai precis pe poze din câmp</li>
+        <li>Harta de risc pentru toate parcelele</li>
+        <li>Înregistrare cu e-mail și alerte</li>
+      </ul>
+    </div>
+    <aside class="notes"><h4>Idei pentru voce</h4><ul><li>Ce construim în luna până la Demo 2 și de ce</li><li>Ce nu am făcut înainte de Demo 1: înregistrarea cu e-mail, harta de risc, alertele, cele 38 de clase</li><li>Lista e o ciornă: se confirmă ce e realist într-o lună</li></ul></aside>
+  </section>
+
+</main>
+<div class="counter" aria-live="polite"></div>
+<script src="deck.js"></script>
+</body>
+</html>
