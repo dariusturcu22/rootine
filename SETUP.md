@@ -71,9 +71,15 @@ docker compose ps
 | Backend health through nginx | http://localhost/api/actuator/health |
 | Backend Swagger UI | http://localhost:8080/swagger-ui.html |
 | AI service docs | http://localhost:8000/docs |
+| Captured development email (Mailpit) | http://localhost:8025 |
 | RabbitMQ management (user and password in `.env`) | http://localhost:15672 |
 
-Ports: web 80, backend 8080, ai-service 8000, db 5432, rabbitmq 5672 and 15672.
+Ports: web 80, backend 8080, ai-service 8000, db 5432, rabbitmq 5672 and 15672, Mailpit SMTP 1025 and UI 8025.
+
+The Compose stack routes backend email to the local Mailpit sink; messages are captured and are not
+sent to external recipients. Open the Mailpit UI at `http://localhost:8025` to inspect them.
+RabbitMQ retries a failed alert delivery up to three times, then moves it to the
+`rootine.risk-alerts.dead` queue. Inspect the queue in RabbitMQ management at `http://localhost:15672`.
 
 Stop everything (data in volumes is kept):
 
@@ -152,7 +158,7 @@ Folder: `backend/`. Needs JDK 21. The Maven wrapper is included; do not install 
 Start the database and the message broker:
 
 ```bash
-docker compose up -d db rabbitmq
+docker compose up -d db rabbitmq mailpit
 ```
 
 Run the backend. `JWT_SECRET` is required (at least 32 characters) and the app does not start without it. Generate one locally, for example with `openssl rand -base64 48`, and set it in your shell or ignored `.env` file. Other settings have development defaults that match `.env.example`.

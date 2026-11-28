@@ -3,10 +3,13 @@ package app.risk.service;
 import app.aiclient.AiServiceClient;
 import app.aiclient.AiServiceException;
 import app.aiclient.RiskRequest;
+import app.alert.AlertMessage;
+import app.alert.AlertPublisher;
 import app.parcel.domain.Parcel;
 import app.parcel.repository.ParcelRepository;
 import app.risk.domain.ParcelRisk;
 import app.risk.domain.StoredDiseaseRisk;
+import app.risk.dto.RiskLevel;
 import app.risk.repository.ParcelRiskRepository;
 import java.util.List;
 import java.util.UUID;
@@ -32,6 +35,7 @@ public class RiskRefreshService {
   private final ParcelRepository parcelRepository;
   private final ParcelRiskRepository parcelRiskRepository;
   private final AiServiceClient aiServiceClient;
+  private final AlertPublisher alertPublisher;
   private final TransactionTemplate readOnlyTransaction;
   private final TransactionTemplate writeTransaction;
 
@@ -39,10 +43,12 @@ public class RiskRefreshService {
       ParcelRepository parcelRepository,
       ParcelRiskRepository parcelRiskRepository,
       AiServiceClient aiServiceClient,
+      AlertPublisher alertPublisher,
       PlatformTransactionManager transactionManager) {
     this.parcelRepository = parcelRepository;
     this.parcelRiskRepository = parcelRiskRepository;
     this.aiServiceClient = aiServiceClient;
+    this.alertPublisher = alertPublisher;
     this.readOnlyTransaction = new TransactionTemplate(transactionManager);
     this.readOnlyTransaction.setReadOnly(true);
     this.writeTransaction = new TransactionTemplate(transactionManager);
@@ -86,11 +92,38 @@ public class RiskRefreshService {
 
     try {
       writeTransaction.executeWithoutResult(status -> store(parcel.id(), aiResponse));
-      return true;
     } catch (RuntimeException exception) {
       LOGGER.warn(
           "Risk refresh could not store parcel {}: {}", parcel.id(), exception.getMessage());
       return false;
+    }
+    publishHighRiskAlert(parcel, aiResponse);
+    return true;
+  }
+
+  private void publishHighRiskAlert(ParcelSnapshot parcel, app.aiclient.RiskResponse aiResponse) {
+    if (!"high".equals(aiResponse.level())) {
+      return;
+    }
+    AlertMessage message =
+        new AlertMessage(
+            parcel.userId(),
+            parcel.recipientEmail(),
+            parcel.id(),
+            parcel.name(),
+            parcel.crop(),
+            RiskLevel.HIGH,
+            aiResponse.riskIndex(),
+            aiResponse.reason(),
+            aiResponse.generatedAt());
+    try {
+      alertPublisher.publish(message);
+    } catch (RuntimeException exception) {
+      LOGGER.warn(
+          "Could not publish high-risk alert for parcel {}: {}",
+          parcel.id(),
+          exception.getMessage(),
+          exception);
     }
   }
 
@@ -130,9 +163,23 @@ public class RiskRefreshService {
 
   private static ParcelSnapshot toSnapshot(Parcel parcel) {
     Coordinate centre = parcel.getGeometry().getCentroid().getCoordinate();
-    return new ParcelSnapshot(parcel.getId(), parcel.getCrop(), centre.getY(), centre.getX());
+    return new ParcelSnapshot(
+        parcel.getId(),
+        parcel.getOwner().getId(),
+        parcel.getOwner().getEmail(),
+        parcel.getName(),
+        parcel.getCrop(),
+        centre.getY(),
+        centre.getX());
   }
 
   /** Immutable parcel data read in the first transaction and used for the AI calls afterwards. */
-  private record ParcelSnapshot(UUID id, String crop, double latitude, double longitude) {}
+  private record ParcelSnapshot(
+      UUID id,
+      UUID userId,
+      String recipientEmail,
+      String name,
+      String crop,
+      double latitude,
+      double longitude) {}
 }

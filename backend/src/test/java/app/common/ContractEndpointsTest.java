@@ -53,7 +53,8 @@ import org.springframework.test.web.servlet.MockMvc;
     properties = {
       "spring.autoconfigure.exclude=" + ContractEndpointsTest.EXCLUDED_AUTOCONFIG,
       "app.demo-token.enabled=true",
-      "app.risk-refresh.enabled=false"
+      "app.risk-refresh.enabled=false",
+      "app.alert.enabled=false"
     })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -285,6 +286,7 @@ class ContractEndpointsTest {
   void parcelEndpointsRequireAuthentication() throws Exception {
     mockMvc.perform(get("/parcels")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/crops")).andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/alerts/stream")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/risk/heatmap")).andExpect(status().isUnauthorized());
   }
 
