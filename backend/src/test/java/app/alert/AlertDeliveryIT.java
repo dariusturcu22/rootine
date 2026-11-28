@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 
 import app.AbstractIntegrationTest;
 import app.risk.dto.RiskLevel;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class AlertDeliveryIT extends AbstractIntegrationTest {
 
+  private static final Duration DEAD_LETTER_TIMEOUT = Duration.ofSeconds(10);
   private static final String ALERT_EXCHANGE = "rootine.alerts";
   private static final String ALERT_ROUTING_KEY = "rootine.risk-alert";
   private static final String DEAD_LETTER_QUEUE = "rootine.risk-alerts.dead";
@@ -47,8 +49,24 @@ class AlertDeliveryIT extends AbstractIntegrationTest {
     rabbitTemplate.convertAndSend(ALERT_EXCHANGE, ALERT_ROUTING_KEY, message);
 
     verify(mailSender, timeout(15_000).times(3)).send(any(SimpleMailMessage.class));
-    AlertMessage rejected =
-        (AlertMessage) rabbitTemplate.receiveAndConvert(DEAD_LETTER_QUEUE, 5_000);
-    assertThat(rejected).isEqualTo(message);
+    AlertMessage rejected = receiveDeadLetter();
+    assertThat(rejected)
+        .as("alert is dead-lettered after all email delivery attempts fail")
+        .isNotNull()
+        .isEqualTo(message);
+  }
+
+  private AlertMessage receiveDeadLetter() {
+    long deadline = System.nanoTime() + DEAD_LETTER_TIMEOUT.toNanos();
+    while (System.nanoTime() < deadline) {
+      Object received = rabbitTemplate.receiveAndConvert(DEAD_LETTER_QUEUE, 500);
+      if (received instanceof AlertMessage alertMessage) {
+        return alertMessage;
+      }
+      if (received != null) {
+        throw new AssertionError("Unexpected message in the risk-alert dead-letter queue.");
+      }
+    }
+    return null;
   }
 }
