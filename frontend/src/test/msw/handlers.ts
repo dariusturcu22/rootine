@@ -112,6 +112,13 @@ export const handlers: RequestHandler[] = [
   http.post('*/api/auth/demo-token', () =>
     HttpResponse.json({ accessToken: 'demo-access-token', tokenType: 'Bearer', expiresIn: 3600 }),
   ),
+  http.post('*/api/auth/register', async ({ request }) => {
+    const { email } = (await request.json()) as { email: string }
+    return HttpResponse.json({ id: '7c9e6679-7425-40de-944b-e07fc1f90ae7', email }, { status: 201 })
+  }),
+  http.post('*/api/auth/login', () =>
+    HttpResponse.json({ accessToken: 'demo-access-token', tokenType: 'Bearer', expiresIn: 3600 }),
+  ),
   http.get('*/api/crops', () => HttpResponse.json(crops)),
   http.get('*/api/parcels/:id/risk', ({ params }) => {
     const risk = parcelRisks.find(({ parcelId }) => parcelId === params.id)

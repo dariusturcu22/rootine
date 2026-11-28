@@ -1,7 +1,16 @@
-import { NavLink, Outlet } from 'react-router'
+import { NavLink, Outlet, useNavigate } from 'react-router'
+import { useAuthStore } from '../features/auth/store/authStore'
 import './MainLayout.css'
 
 export function MainLayout() {
+  const navigate = useNavigate()
+  const clearToken = useAuthStore((state) => state.clear)
+
+  function handleLogout() {
+    clearToken()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div className="app-shell">
       <aside className="app-sidebar">
@@ -46,6 +55,9 @@ export function MainLayout() {
             Alerts
           </NavLink>
         </nav>
+        <button className="sidebar-logout" type="button" onClick={handleLogout}>
+          Sign out
+        </button>
         <p className="sidebar-note">A little more care for every field.</p>
       </aside>
       <main className="app-main">

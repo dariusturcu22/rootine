@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react'
 import type { DrawEvents } from 'leaflet'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { http, HttpResponse } from 'msw'
 import { MemoryRouter } from 'react-router'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { deleteParcel } from '../../../lib/apiClient'
+import { deleteParcel, type Crop } from '../../../lib/apiClient'
+import { server } from '../../../test/msw/server'
 import { MapView } from './MapView'
 
 vi.mock('../../../lib/apiClient', async () => {
@@ -235,6 +237,44 @@ describe('MapView', () => {
       expect(vi.mocked(deleteParcel).mock.calls[0]?.[0]).toBe(
         '7c9e6679-7425-40de-944b-e07fc1f90ae7',
       )
+    })
+  })
+
+  describe('Map crop options', () => {
+    it('renders every crop returned by the crops endpoint', async () => {
+      const availableCrops = Array.from({ length: 38 }, (_, cropIndex): Crop => ({
+        crop: `crop-${cropIndex + 1}`,
+        diagnosisSupported: true,
+        weatherSupported: false,
+        supportLevel: 'lab_only',
+        weatherRules: [],
+        classes: [`class-${cropIndex + 1}`],
+      }))
+      server.use(http.get('*/api/crops', () => HttpResponse.json(availableCrops)))
+
+      renderMapView()
+
+      const onCreated = editControlProps.mock.lastCall?.[0].onCreated
+      if (!onCreated) {
+        throw new Error('Expected EditControl to receive an onCreated handler')
+      }
+
+      onCreated({
+        layer: {
+          getLatLngs: () => [
+            [
+              { lat: 45, lng: 25 },
+              { lat: 45, lng: 25.1 },
+              { lat: 45.1, lng: 25 },
+            ],
+          ],
+        },
+      } as DrawEvents.Created)
+
+      await screen.findByRole('option', { name: 'crop-38' })
+      const cropOptions = screen.getAllByRole('option')
+
+      expect(cropOptions).toHaveLength(availableCrops.length + 1)
     })
   })
 })
