@@ -1,8 +1,7 @@
 package app.alert.web;
 
-import static app.common.error.EndpointStub.notImplemented;
-
 import app.alert.dto.AlertEvent;
+import app.alert.service.AlertSseService;
 import app.common.config.OpenApiConfig;
 import app.common.error.ProblemDetailResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,7 +11,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.UUID;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -21,9 +23,6 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
  * Live alerts over server-sent events. When a parcel's risk is high, the daily job publishes an
  * alert; a consumer pushes a {@code risk-alert} event to the user on this stream. There is no
  * alerts list in Demo 1.
- *
- * <p>Published for the API contract but not implemented yet, so the call returns 501 with a Problem
- * Details body.
  */
 @RestController
 @Tag(name = "Alerts", description = "Live risk alerts over server-sent events.")
@@ -31,6 +30,12 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 public class AlertController {
 
   private static final String PROBLEM_JSON = ProblemDetailResponse.MEDIA_TYPE;
+
+  private final AlertSseService alertSseService;
+
+  public AlertController(AlertSseService alertSseService) {
+    this.alertSseService = alertSseService;
+  }
 
   @Operation(
       summary = "Open the live alerts stream",
@@ -53,16 +58,9 @@ public class AlertController {
             @Content(
                 mediaType = PROBLEM_JSON,
                 schema = @Schema(implementation = ProblemDetailResponse.class))),
-    @ApiResponse(
-        responseCode = "501",
-        description = "Not implemented yet.",
-        content =
-            @Content(
-                mediaType = PROBLEM_JSON,
-                schema = @Schema(implementation = ProblemDetailResponse.class)))
   })
   @GetMapping(path = "/alerts/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  public SseEmitter streamAlerts() {
-    throw notImplemented();
+  public SseEmitter streamAlerts(@AuthenticationPrincipal Jwt jwt) {
+    return alertSseService.subscribe(UUID.fromString(jwt.getSubject()));
   }
 }

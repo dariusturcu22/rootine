@@ -45,7 +45,8 @@ import org.springframework.web.multipart.MultipartFile;
           + "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration,"
           + "org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration,"
           + "org.springframework.boot.mail.autoconfigure.MailSenderAutoConfiguration",
-      "app.risk-refresh.enabled=false"
+      "app.risk-refresh.enabled=false",
+      "app.alert.enabled=false"
     })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc

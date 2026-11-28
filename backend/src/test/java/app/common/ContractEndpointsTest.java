@@ -21,6 +21,7 @@ import app.parcel.dto.PolygonGeometry;
 import app.parcel.service.ParcelNotFoundException;
 import app.parcel.service.ParcelService;
 import app.risk.dto.DiseaseRisk;
+import app.risk.dto.HeatmapPoint;
 import app.risk.dto.RiskLevel;
 import app.risk.dto.RiskResponse;
 import app.risk.service.RiskRefreshService;
@@ -52,7 +53,8 @@ import org.springframework.test.web.servlet.MockMvc;
     properties = {
       "spring.autoconfigure.exclude=" + ContractEndpointsTest.EXCLUDED_AUTOCONFIG,
       "app.demo-token.enabled=true",
-      "app.risk-refresh.enabled=false"
+      "app.risk-refresh.enabled=false",
+      "app.alert.enabled=false"
     })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
@@ -200,6 +202,33 @@ class ContractEndpointsTest {
   }
 
   @Test
+  void heatmapEndpointReturnsStoredPointsForTheAuthenticatedOwner() throws Exception {
+    UUID ownerId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+    UUID parcelId = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
+    given(riskService.getHeatmap(ownerId))
+        .willReturn(
+            List.of(
+                new HeatmapPoint(
+                    parcelId,
+                    "North field",
+                    "potato",
+                    46.775,
+                    23.595,
+                    RiskLevel.MEDIUM,
+                    42,
+                    Instant.parse("2026-11-01T06:00:00Z"))));
+
+    mockMvc
+        .perform(get("/risk/heatmap").with(jwt().jwt(token -> token.subject(ownerId.toString()))))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].parcelId").value(parcelId.toString()))
+        .andExpect(jsonPath("$[0].latitude").value(46.775))
+        .andExpect(jsonPath("$[0].longitude").value(23.595))
+        .andExpect(jsonPath("$[0].level").value("medium"))
+        .andExpect(jsonPath("$[0].riskIndex").value(42));
+  }
+
+  @Test
   void parcelEndpointsCreateAndListTheAuthenticatedUsersParcels() throws Exception {
     UUID ownerId = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
     UUID parcelId = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
@@ -257,6 +286,8 @@ class ContractEndpointsTest {
   void parcelEndpointsRequireAuthentication() throws Exception {
     mockMvc.perform(get("/parcels")).andExpect(status().isUnauthorized());
     mockMvc.perform(get("/crops")).andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/alerts/stream")).andExpect(status().isUnauthorized());
+    mockMvc.perform(get("/risk/heatmap")).andExpect(status().isUnauthorized());
   }
 
   @Test

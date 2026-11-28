@@ -23,7 +23,8 @@ import org.springframework.test.web.servlet.MockMvc;
     properties = {
       "spring.autoconfigure.exclude=" + ContractEndpointsTest.EXCLUDED_AUTOCONFIG,
       "app.demo-token.enabled=false",
-      "app.risk-refresh.enabled=false"
+      "app.risk-refresh.enabled=false",
+      "app.alert.enabled=false"
     })
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
